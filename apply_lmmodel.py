@@ -403,5 +403,5 @@ print("f1_insult:", f1_insult)
 print("f1_identity_hate:", f1_identity_hate)
 print("macro F1:", (f1_toxic + f1_severe_toxic + f1_obscene + f1_threat + f1_insult + f1_identity_hate)/6)
 
-result.to_csv(str(args.resultpath) + '_result.csv', sep='\t')
+result.to_csv(str(args.resultpath) + 'ft_result.csv', sep='\t')
 
