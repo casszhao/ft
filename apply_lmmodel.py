@@ -1,28 +1,7 @@
-from transformers import RobertaConfig, BertPreTrainedModel, RobertaTokenizerFast, RobertaModel
+from transformers import BertPreTrainedModel, BertModel, BertTokenizerFast
 import torch
 import torch.nn as nn
-
-
-class RobertaClassificationHead(nn.Module):
-    """Head for sentence-level classification tasks."""
-
-    def __init__(self, config):
-        super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.out_proj = nn.Linear(config.hidden_size, config.num_labels)
-
-    def forward(self, features, **kwargs):
-        x = features[:, 0, :]  # take <s> token (equiv. to [CLS])
-        x = self.dropout(x)
-        x = self.dense(x)
-        x = torch.tanh(x)
-        x = self.dropout(x)
-        x = self.out_proj(x)
-        return x
-
 import time
-
 from transformers import AdamW
 import pandas as pd
 from sklearn.metrics import f1_score
@@ -30,15 +9,19 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 import argparse
 import datetime
 
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+    print('There are %d GPU(s) available.' % torch.cuda.device_count())
+    print('We will use the GPU:', torch.cuda.get_device_name(0))
+else:
+    print('No GPU available, using the CPU instead.')
+    device = torch.device("cpu")
 
-def format_time(elapsed):
-    elapsed_rounded = int(round((elapsed)))
-    return str(datetime.timedelta(seconds=elapsed_rounded))
 
-
-parser = argparse.ArgumentParser(description='run pure bert on multi-label dataset')
+parser = argparse.ArgumentParser(description='run fine-tuned model on multi-label dataset')
 # parser.add_argument('trainable', type=str, action='store', choices = ['fix','nofix'])
-
+# 1
+parser.add_argument('saved_lm_model', type=str, help= 'where to save the trained language model')
 # 2
 parser.add_argument('-e', '--epochs', type=int, default=10, metavar='', help='how many epochs')
 # 3
@@ -49,20 +32,19 @@ group.add_argument('--testing', action='store_true', help='testing using the sma
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
 
+
 MAX_LEN = 100
 NUM_LABELS = 6
 
 batch_size = 16
 epochs = args.epochs
 
-if torch.cuda.is_available():
-    device = torch.device("cuda")
-    print('There are %d GPU(s) available.' % torch.cuda.device_count())
-    print('We will use the GPU:', torch.cuda.get_device_name(0))
-else:
-    print('No GPU available, using the CPU instead.')
-    device = torch.device("cpu")
-print(device)
+
+
+def format_time(elapsed):
+    elapsed_rounded = int(round((elapsed)))
+    return str(datetime.timedelta(seconds=elapsed_rounded))
+
 
 if args.testing:
     train_path = 'multi-label_testing_train.csv'
@@ -113,18 +95,18 @@ validation_labels = torch.tensor([labels_validation['toxic'].values,
 #config = RobertaConfig.from_json_file('./ft/lm_model/config.json')
 #print('loaded config')
 # model = RobertaConfig.from_pretrained(pretrained_model_name_or_path = './ft/lm_model', from_tf=False, config=config)
-tokenizer = RobertaTokenizerFast.from_pretrained("./ft/lm_model", max_len=512)
-class RoBerta_cus(BertPreTrainedModel):
-    config_class = RobertaConfig.from_json_file('./ft/lm_model/config.json')
+tokenizer = BertTokenizerFast.from_pretrained(str(args.saved_lm_model), max_len=512)
 
-    base_model_prefix = "roberta"
 
-    def __init__(self, config):
+class Bert_clf(BertPreTrainedModel):
+    def __init__(self, config, token='cls'):
         super().__init__(config)
         self.num_labels = config.num_labels
-        self.roberta = RobertaModel
-        self.classifier = RobertaClassificationHead(config)
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
         self.init_weights()
+        self.token = token
 
     def forward(
             self,
@@ -137,40 +119,52 @@ class RoBerta_cus(BertPreTrainedModel):
             labels=None,
             output_attentions=None,
     ):
-        outputs = self.roberta(
+        outputs = self.bert(
             input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
             position_ids=position_ids,
             head_mask=head_mask,
-            inputs_embeds=inputs_embeds)
-
-        sequence_output = outputs[0]
-        logits = self.classifier(sequence_output)
+            inputs_embeds=inputs_embeds,
+        )
+        # 0: last_hidden_state
+        # 1: pooler_output
+        # 2: hidden_states (one for the output of the embeddings + one for the output of each layer)
+        #                  of shape (batch_size, sequence_length, hidden_size).
+        # 3: attentions
+        if self.token == 'embedding':
+            hidden_states = outputs[2]
+            output_of_each_layer = hidden_states[0]
+            output_oel = self.dropout(output_of_each_layer).permute(0, 2, 1)
+            # [16, 100, 256] permute --> [16, 256, 100]
+            pooled = F.max_pool1d(output_oel, output_oel.shape[2]).squeeze(2)
+            # [16, 256]
+            logits = self.classifier(pooled)
+        elif self.token == 'cls':
+            pooled_output = outputs[1]
+            pooled_output = self.dropout(pooled_output)
+            logits = self.classifier(pooled_output)
+        else:
+            print('need to define using [CLS] token or embedding to the nn.linear layer')
 
         if labels is not None:
-            loss_fct = nn.BCEWithLogitsLoss()  # .to(device)
+            loss_fct = nn.BCEWithLogitsLoss()#.to(device)
             loss = loss_fct(logits, labels)
             output = (loss, logits)
         else:
             output = logits
 
-        return output
+        return output  # (loss), logits
 '''
 from transformers import RobertaTokenizer
 lm_model = RobertaTokenizer.from_pretrained('distilroberta-base', do_lower_case=False)
 '''
-from bert_models import RoBerta_clf
-model = RoBerta_clf.from_pretrained('./ft/lm_model',
-                                    num_labels=NUM_LABELS,
-                                    output_attentions=False,
-                                    output_hidden_states=True)
-'''
-model = RoBerta_cus.from_pretrained('./ft/lm_model',
-                    num_labels=NUM_LABELS,
-                    output_attentions=False,
-                    output_hidden_states=True)
-                    '''
+
+model = Bert_clf.from_pretrained(str(args.saved_lm_model),
+                                 num_labels=NUM_LABELS,
+                                 output_attentions=False,
+                                 output_hidden_states=True)
+
 print(model)
 
 model.to(device)
@@ -409,5 +403,5 @@ print("f1_insult:", f1_insult)
 print("f1_identity_hate:", f1_identity_hate)
 print("macro F1:", (f1_toxic + f1_severe_toxic + f1_obscene + f1_threat + f1_insult + f1_identity_hate)/6)
 
-result.to_csv(str(args.resultpath) + str(args.BertModel) + '_result.csv', sep='\t')
+result.to_csv(str(args.resultpath) + '_result.csv', sep='\t')
 

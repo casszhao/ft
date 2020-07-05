@@ -1,4 +1,11 @@
+'''before run lmmodel, using
+$ cat /path/to/all/file/dir/* > /path/to/all/file/dir/merges.txt
+
+/path/to/all/file/dir/merges.txt   is the args.txtfile
+'''
+
 import torch
+from pathlib import Path
 if torch.cuda.is_available():
     device = torch.device("cuda")
     print('There are %d GPU(s) available.' % torch.cuda.device_count())
@@ -9,49 +16,46 @@ else:
 print(device)
 
 
+import argparse
+parser = argparse.ArgumentParser(description='convert json to txt for later training')
+parser.add_argument('--tokenizerfile', type=str, help= 'file to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
+parser.add_argument('--txtfile', type=str, help= 'file to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
+parser.add_argument('--saved_lm_model', type=str, help= 'where to save the trained language model')
+args = parser.parse_args()
+
+
 ''' import trained lm_model'''
-from tokenizers.implementations import ByteLevelBPETokenizer
+from tokenizers.implementations import ByteLevelBPETokenizer, CharBPETokenizer, SentencePieceBPETokenizer, BertWordPieceTokenizer
 from tokenizers.processors import BertProcessing
 
-tokenizer = ByteLevelBPETokenizer("./lm_model/vocab.json",
-                                  "./lm_model/merges.txt",
-                                  )
-
-tokenizer._tokenizer.post_processor = BertProcessing(("</s>", tokenizer.token_to_id("</s>")),
-                                                     ("<s>", tokenizer.token_to_id("<s>")),
-                                                     )
-
+# the tokenizer savedresults file, for bert, only one, vocab.txt
+tokenizer = BertWordPieceTokenizer(str(args.tokenizerfile))
 tokenizer.enable_truncation(max_length=512)
 
 
 ''' star training language model '''
-from transformers import RobertaConfig
+from transformers import BertTokenizerFast, BertConfig
+config = BertConfig(vocab_size=52_000,
+                    max_position_embeddings=512,
+                    num_attention_heads=12,
+                    num_hidden_layers=12,
+                    type_vocab_size=1,
+                    )
 
-config = RobertaConfig(
-    vocab_size=52_000,
-    max_position_embeddings=514,
-    num_attention_heads=12,
-    num_hidden_layers=6,
-    type_vocab_size=1,
-)
-
-from transformers import RobertaTokenizerFast
-tokenizer = RobertaTokenizerFast.from_pretrained("./lm_model", max_len=512)
+tokenizer = BertTokenizerFast.from_pretrained("./lm_model", max_len=512)
 
 # initialize from a config, not from an existing pretrained model or checkpoint.
-from transformers import RobertaForMaskedLM
-model = RobertaForMaskedLM(config=config)
-
-print(model.num_parameters())
+from transformers import BertForMaskedLM
+model = BertForMaskedLM(config=config)
+print('model parameters:', model.num_parameters())
 print(model)
 
 from transformers import LineByLineTextDataset
-
-dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path="./sample_data/sample_data1.txt", block_size=128)
-print('created dataset')
+#paths = [str(x) for x in Path(str(args.txtfolder)).glob("**/*.txt")]
+dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= str(args.txtfile), block_size=128)
+print('created dataset from folders')
 
 from transformers import DataCollatorForLanguageModeling
-
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
 
 # initial the trainer
@@ -75,13 +79,12 @@ trainer = Trainer(
     prediction_loss_only=True,
 )
 
-trainer.train() # what saved are 0. config.json 1. pytorch_model.bin 2. training_args.bin
-
+trainer.train() # what savedresults are 0. config.json 1. pytorch_model.bin 2. training_args.bin
 
 ''' Save final model (+ lm_model + config) to disk '''
 
-trainer.save_model("./lm_model")
-print('model saved')
+trainer.save_model(str(args.saved_lm_model))
+print('model savedresults, config.json, pytorch_model.bin, training_args.bin, vocab.txt')
 
 ''' check the trained lm'''
 

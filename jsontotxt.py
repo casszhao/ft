@@ -13,7 +13,7 @@ for i in data:
      if i['author_flair_text'] != None:
           row = i['author_flair_text']
           print(row)
-          f.write("\n")
+          #f.write("\n")
           f.write(row)
      else:
           pass
