@@ -4,11 +4,9 @@ https://colab.research.google.com/gist/aditya-malte/2d4f896f471be9c38eb4d723a710
 import json
 from pathlib import Path
 from tokenizers import ByteLevelBPETokenizer, CharBPETokenizer, SentencePieceBPETokenizer, BertWordPieceTokenizer
-import regex as re
-import pandas as pd
-from tqdm import tqdm
 
 
+'''
 # for processing the list derived from a dataframe
 def basicPreprocess(text):
   try:
@@ -18,7 +16,7 @@ def basicPreprocess(text):
     print("Exception:",e,",on text:", text)
     return None
   return processed_text
-
+'''
 
 paths = [str(x) for x in Path("sample_data/").glob("**/*.txt")]
 

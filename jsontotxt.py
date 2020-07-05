@@ -7,8 +7,8 @@ import pandas as pd
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description='run on multi-label dataset')
-parser.add_argument('--jsonfolder', type=str, help='where are those json files')
-parser.add_argument('--txtfolder', type=str, help='where to save converted txt files')
+parser.add_argument('--jsonfile', type=str, help='where are those json files')
+parser.add_argument('--txtfile', type=str, help='where to save converted txt files')
 args = parser.parse_args()
 
 data = [json.loads(line) for line in open(str(args.jsonfolder), 'r')]
