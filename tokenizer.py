@@ -29,7 +29,7 @@ paths = [str(x) for x in Path(str(args.txtfolder)).glob("**/*.txt")]
 tokenizer = BertWordPieceTokenizer()
 
 
-trainer = BpeTrainer(vocab_size= VOCAB_SIZE, show_progress=True, initial_alphabet=ByteLevel.alphabet())
+#trainer = BpeTrainer(vocab_size= VOCAB_SIZE, show_progress=True, initial_alphabet=ByteLevel.alphabet())
 #tokenizer.train(trainer, paths)
 # Customize training
 '''

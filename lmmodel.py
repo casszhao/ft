@@ -18,8 +18,15 @@ print(device)
 
 import argparse
 parser = argparse.ArgumentParser(description='convert json to txt for later training')
+# 0
+group = parser.add_mutually_exclusive_group()
+group.add_argument('--pre_tokenizer', action='store_true', help='need to specify if using pre trained tokenizer from the package')
+group.add_argument('--new_tokenizer', action='store_true', help='need to specify if using newly trained tokenizer')
+# 1
 parser.add_argument('--tokenizerfile', type=str, help= 'file to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
+# 2
 parser.add_argument('--txtfile', type=str, help= 'file to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
+# 3
 parser.add_argument('--saved_lm_model', type=str, help= 'where to save the trained language model')
 args = parser.parse_args()
 
@@ -29,9 +36,10 @@ from tokenizers.implementations import ByteLevelBPETokenizer, CharBPETokenizer, 
 from tokenizers.processors import BertProcessing
 
 # the tokenizer savedresults file, for bert, only one, vocab.txt
+'''
 tokenizer = BertWordPieceTokenizer(str(args.tokenizerfile))
 tokenizer.enable_truncation(max_length=512)
-
+'''
 
 ''' star training language model '''
 from transformers import BertTokenizerFast, BertConfig
@@ -42,7 +50,12 @@ config = BertConfig(vocab_size=52_000,
                     type_vocab_size=1,
                     )
 
-tokenizer = BertTokenizerFast.from_pretrained("./lm_model", max_len=512)
+if args.new_tokenizer:
+    tokenizer = BertTokenizerFast.from_pretrained("./lm_model", max_len=512)
+elif args.pre_tokenizer:
+    tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased', do_lower_case=False)
+else:
+    print('need to define using new_tokenizer or pre_tokenizer by adding arguments')
 
 # initialize from a config, not from an existing pretrained model or checkpoint.
 from transformers import BertForMaskedLM
