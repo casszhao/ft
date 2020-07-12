@@ -351,7 +351,7 @@ for epoch_i in range(0, epochs):
     if valid_loss < best_valid_loss:
         best_valid_loss = valid_los
         '''
-torch.save(model.state_dict(), str(args.resultpath) + str(args.BertModel) + '_model.pt')
+torch.save(model.state_dict(), str(args.resultpath) + 'Bert_ft_multi-label_model.pt')
 
 print("")
 print("Training complete!")
