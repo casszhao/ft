@@ -1,5 +1,6 @@
 *.bin
 *idea
-sample_data
+sample_data/
 *csv
 *.pt
+listfile.txt
