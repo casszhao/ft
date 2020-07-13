@@ -39,11 +39,11 @@ from tokenizers.processors import BertProcessing
 
 ''' star training language model '''
 from transformers import BertTokenizerFast, BertConfig
-config = BertConfig(vocab_size=52_000,
+config = BertConfig(vocab_size=30522,
                     max_position_embeddings=512,
                     num_attention_heads=12,
                     num_hidden_layers=12,
-                    type_vocab_size=1,
+                    type_vocab_size=2,
                     )
 
 if args.new_tokenizer:
@@ -55,7 +55,7 @@ else:
 
 # initialize from a config, not from an existing pretrained model or checkpoint.
 from transformers import BertForMaskedLM
-model = BertForMaskedLM(config=config)
+model = BertForMaskedLM.from_pretrained('bert-base-uncased', config=config)
 print('model parameters:', model.num_parameters())
 print(model)
 

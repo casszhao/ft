@@ -34,7 +34,7 @@ group2.add_argument('--pre_tokenizer', action='store_true', help='need to specif
 group2.add_argument('--new_tokenizer', action='store_true', help='need to specify if using newly trained tokenizer')
 #  pre_trained tokenizer no need
 parser.add_argument('--tokenizerfilefolder', type=str, help = 'if using new_tokenizer, need to specify tokenizer file path')
-parser.add_argument('--pretrained_tokenizer', type=str, help = 'if using new_tokenizer, need to specify tokenizer file path')
+parser.add_argument('--pretrained_tokenizer', type=str, help = 'bert-base-cased, bert-large-uncased')
 # 4
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
