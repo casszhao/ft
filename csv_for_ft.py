@@ -2,8 +2,8 @@
 including:
          0. preprocessing csv to txt
          1. train LM and save it
-
 '''
+
 
 import argparse
 parser = argparse.ArgumentParser(description='convert json to txt for later training')
@@ -29,6 +29,9 @@ args = parser.parse_args()
 
 import pandas as pd
 import regex as re
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def basicPreprocess(text):
   try:
@@ -69,8 +72,55 @@ else:
     print('need to define using new_tokenizer or pre_tokenizer by adding arguments')
 
 model = BertForMaskedLM.from_pretrained('bert-base-uncased', config=config)
-print('model parameters:', model.num_parameters())
-print(model)
+print('===========================')
+print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
+print('===========================')
+
+def freeze_layer_fun(freeze_layer):
+    for name, param in model.named_parameters():
+        if freeze_layer in name:
+            print(name)
+            param.requires_grad = False
+        else:
+            pass
+
+print('++++++++++++++++++++++++++++++++++++ freeze layers +++++++++++++++++++++++++++++')
+
+freeze_layer_1 = '.1.'
+freeze_layer_fun(freeze_layer_1)
+
+freeze_layer_2 = '.2.'
+freeze_layer_fun(freeze_layer_2)
+
+freeze_layer_3 = '.3.'
+freeze_layer_fun(freeze_layer_3)
+'''
+freeze_layer_4 = '.4.'
+freeze_layer_fun(freeze_layer_4)
+
+freeze_layer_5 = '.5.'
+freeze_layer_fun(freeze_layer_5)
+
+freeze_layer_6 = '.6.'
+freeze_layer_fun(freeze_layer_6)
+
+freeze_layer_7 = '.7.'
+freeze_layer_fun(freeze_layer_7)
+
+freeze_layer_8 = '.8.'
+freeze_layer_fun(freeze_layer_8)
+
+freeze_layer_9 = '.9.'
+freeze_layer_fun(freeze_layer_9)
+
+freeze_layer_9 = '.10.'
+freeze_layer_fun(freeze_layer_10)
+'''
+
+print('===========================')
+print(f'The model now has {count_parameters(model):,} trainable parameters')
+print('===========================')
+
 
 
 from transformers import LineByLineTextDataset
