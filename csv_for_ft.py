@@ -54,11 +54,11 @@ with open('listfile.txt', 'w') as filehandle:
 
 from transformers import BertTokenizerFast, BertConfig, BertForMaskedLM
 
-config = BertConfig(vocab_size=52_000,
+config = BertConfig(vocab_size=30522,
                     max_position_embeddings=512,
                     num_attention_heads=12,
                     num_hidden_layers=12,
-                    type_vocab_size=1,
+                    type_vocab_size=2,
                     )
 
 if args.new_tokenizer:
@@ -68,9 +68,10 @@ elif args.pre_tokenizer:
 else:
     print('need to define using new_tokenizer or pre_tokenizer by adding arguments')
 
-model = BertForMaskedLM(config=config)
+model = BertForMaskedLM.from_pretrained('bert-base-uncased', config=config)
 print('model parameters:', model.num_parameters())
 print(model)
+
 
 from transformers import LineByLineTextDataset
 #paths = [str(x) for x in Path(str(args.txtfolder)).glob("**/*.txt")]
