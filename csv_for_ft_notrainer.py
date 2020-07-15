@@ -4,25 +4,19 @@ including:
          1. train LM and save it
 '''
 
-
 import argparse
 parser = argparse.ArgumentParser(description='convert json to txt for later training')
 # 0
-group = parser.add_mutually_exclusive_group()
-group.add_argument('--pre_tokenizer', action='store_true', help='need to specify if using pre trained tokenizer from the package')
-group.add_argument('--new_tokenizer', action='store_true', help='need to specify if using newly trained tokenizer')
-parser.add_argument('--tokenizerfilefolder', type=str, help = 'if using new_tokenizer, need to specify tokenizer file path')
 
 # 1 pre_tokenizer no need
-group2 = parser.add_mutually_exclusive_group()
-group2.add_argument('--running', action='store_true', help='running using the original big dataset')
-group2.add_argument('--testing', action='store_true', help='testing using the small sample.txt dataset')
+group = parser.add_mutually_exclusive_group()
+group.add_argument('--running', action='store_true', help='running using the original big dataset')
+group.add_argument('--testing', action='store_true', help='testing using the small dataset')
 
 # 2 text col name
 parser.add_argument('--textcolname', type=str)
-
 # 3
-parser.add_argument('--txtfile', type=str, help= 'a csv file, to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
+parser.add_argument('--csvfile', type=str, help= 'a csv file, to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
 # 4
 parser.add_argument('--saved_lm_model', type=str, help= 'where to save the trained language model')
 args = parser.parse_args()
@@ -30,22 +24,25 @@ args = parser.parse_args()
 import pandas as pd
 import regex as re
 
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
+
 def basicPreprocess(text):
-  try:
-    processed_text = text.lower()
-    processed_text = re.sub(r'\W +', ' ', processed_text)
-  except Exception as e:
-    print("Exception:",e,",on text:", text)
-    return None
-  return processed_text
+    try:
+        processed_text = text.lower()
+        processed_text = re.sub(r'\W +', ' ', processed_text)
+    except Exception as e:
+        print("Exception:", e, ",on text:", text)
+        return None
+    return processed_text
+
 
 if args.testing:
-    data = pd.read_csv(str(args.txtfile)).sample(10)
+    data = pd.read_csv(str(args.csvfile)).sample(10)
 elif args.running:
-    data = pd.read_csv(str(args.txtfile))
+    data = pd.read_csv(str(args.csvfile))
 
 data[str(args.textcolname)] = data[str(args.textcolname)].apply(basicPreprocess).dropna()
 data = data[str(args.textcolname)]
@@ -57,21 +54,15 @@ with open('listfile.txt', 'w') as filehandle:
 
 from transformers import BertTokenizerFast, BertConfig, BertForMaskedLM
 
-config = BertConfig(vocab_size=30522,
+config = BertConfig(vocab_size=28996,
                     max_position_embeddings=512,
                     num_attention_heads=12,
                     num_hidden_layers=12,
                     type_vocab_size=2,
                     )
 
-if args.new_tokenizer:
-    tokenizer = BertTokenizerFast.from_pretrained(str(args.tokenizerfilefolder), max_len=512)
-elif args.pre_tokenizer:
-    tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased', do_lower_case=False)
-else:
-    print('need to define using new_tokenizer or pre_tokenizer by adding arguments')
-
-model = BertForMaskedLM.from_pretrained('bert-base-uncased', config=config)
+tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased', do_lower_case=False)
+model = BertForMaskedLM.from_pretrained('bert-base-cased', config=config)
 print('===========================')
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 print('===========================')
@@ -85,7 +76,7 @@ def freeze_layer_fun(freeze_layer):
             pass
 
 print('++++++++++++++++++++++++++++++++++++ freeze layers +++++++++++++++++++++++++++++')
-
+'''
 freeze_layer_1 = '.1.'
 freeze_layer_fun(freeze_layer_1)
 
@@ -94,7 +85,7 @@ freeze_layer_fun(freeze_layer_2)
 
 freeze_layer_3 = '.3.'
 freeze_layer_fun(freeze_layer_3)
-'''
+
 freeze_layer_4 = '.4.'
 freeze_layer_fun(freeze_layer_4)
 
@@ -134,11 +125,13 @@ data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, m
 from transformers import Trainer, TrainingArguments
 
 training_args = TrainingArguments(
-    output_dir="lm_model",
+    do_train=True,
+    do_predict=True,
+    output_dir=str(args.saved_lm_model),
     overwrite_output_dir=True,
     num_train_epochs=1,
     per_device_train_batch_size=32,
-    save_steps=10_000,
+    save_steps=1_000,
     save_total_limit=2,
 )
 

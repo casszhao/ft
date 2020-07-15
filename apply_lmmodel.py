@@ -17,11 +17,15 @@ else:
     print('No GPU available, using the CPU instead.')
     device = torch.device("cpu")
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 parser = argparse.ArgumentParser(description='run fine-tuned model on multi-label dataset')
 # parser.add_argument('trainable', type=str, action='store', choices = ['fix','nofix'])
 # 0
 parser.add_argument('saved_lm_model', type=str, help= 'where to save the trained language model')
+#1
+parser.add_argument('--pretrained_tokenizer', type=str, help= 'bert-base-cased, bert-large-uncased')
 # 2
 parser.add_argument('-e', '--epochs', type=int, default=10, metavar='', help='how many epochs')
 # 3
@@ -29,12 +33,8 @@ group = parser.add_mutually_exclusive_group()
 group.add_argument('--running', action='store_true', help='running using the original big dataset')
 group.add_argument('--testing', action='store_true', help='testing using the small sample.txt dataset')
 
-group2 = parser.add_mutually_exclusive_group()
-group2.add_argument('--pre_tokenizer', action='store_true', help='need to specify if using pre trained tokenizer from the package')
-group2.add_argument('--new_tokenizer', action='store_true', help='need to specify if using newly trained tokenizer')
 #  pre_trained tokenizer no need
-parser.add_argument('--tokenizerfilefolder', type=str, help = 'if using new_tokenizer, need to specify tokenizer file path')
-parser.add_argument('--pretrained_tokenizer', type=str, help = 'bert-base-cased, bert-large-uncased')
+
 # 4
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
@@ -103,13 +103,7 @@ validation_labels = torch.tensor([labels_validation['toxic'].values,
 #print('loaded config')
 # model = RobertaConfig.from_pretrained(pretrained_model_name_or_path = './ft/lm_model', from_tf=False, config=config)
 
-if args.new_tokenizer:
-    tokenizer = BertTokenizerFast.from_pretrained(str(args.tokenizerfilefolder), max_len=512)
-elif args.pre_tokenizer:
-    tokenizer = BertTokenizerFast.from_pretrained(str(args.pretrained_tokenizer), do_lower_case=False)
-else:
-    print('need to define using new_tokenizer or pre_tokenizer by adding arguments')
-
+tokenizer = BertTokenizerFast.from_pretrained(str(args.pretrained_tokenizer), do_lower_case=False)
 
 
 class Bert_clf(BertPreTrainedModel):
@@ -180,6 +174,10 @@ model = Bert_clf.from_pretrained(str(args.saved_lm_model),
                                  output_hidden_states=True)
 
 print(model)
+
+print('===========================')
+print(f'The model now has {count_parameters(model):,} trainable parameters')
+print('===========================')
 
 model.to(device)
 
