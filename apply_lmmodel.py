@@ -23,8 +23,10 @@ def count_parameters(model):
 parser = argparse.ArgumentParser(description='run fine-tuned model on multi-label dataset')
 # parser.add_argument('trainable', type=str, action='store', choices = ['fix','nofix'])
 # 0
+parser.add_argument('data', type=str, choices=['multi-label', 'wassem', 'AG10K', 'tweet50k'])
 parser.add_argument('saved_lm_model', type=str, help= 'where to save the trained language model')
-#1
+
+# 1
 parser.add_argument('--pretrained_tokenizer', type=str, help= 'bert-base-cased, bert-large-uncased')
 # 2
 parser.add_argument('-e', '--epochs', type=int, default=10, metavar='', help='how many epochs')
@@ -41,11 +43,16 @@ args = parser.parse_args()
 
 
 MAX_LEN = 100
-NUM_LABELS = 6
+
+if args.data == 'multi-label':
+    NUM_LABELS = 6
+elif args.data == 'AG10K':
+    NUM_LABELS = 3
+else:
+    NUM_LABELS = 4
 
 batch_size = 16
 epochs = args.epochs
-
 
 
 def format_time(elapsed):
@@ -53,57 +60,94 @@ def format_time(elapsed):
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
 
+train_path = str(args.data) + '_train.csv'
+test_path = str(args.data) + '_test.csv'
+validation_path = str(args.data) + '_validation.csv'
+
 if args.testing:
-    train_path = 'multi-label_testing_train.csv'
-    test_path = 'multi-label_testing_test.csv'
-    validation_path = 'multi-label_testing_valid.csv'
+    train = pd.read_csv(train_path).sample(10)
+    test = pd.read_csv(test_path).sample(10)
+    validation = pd.read_csv(validation_path).sample(10)
 elif args.running:
-    train_path = 'multi-label_train.csv'
-    test_path = 'multi-label_test.csv'
-    validation_path = 'multi-label_validation.csv'
+    train = pd.read_csv(train_path)
+    test = pd.read_csv(test_path)
+    validation = pd.read_csv(validation_path)
 else:
     print('need to define parameter, it is "--running" or "--testing"')
+print('   TEST', test)
+
+if args.data == 'multi-label':
+    sentences_train = train.comment_text.values
+    sentences_test = test.comment_text.values
+    sentences_validation = validation.comment_text.values
+
+    labels_train = train.iloc[:, -6:].copy()
+    labels_test = test.iloc[:, -6:].copy()
+    labels_validation = validation.iloc[:, -6:].copy()
+
+    train_labels = torch.tensor([labels_train['toxic'].values,
+                                 labels_train['severe_toxic'].values,
+                                 labels_train['obscene'].values,
+                                 labels_train['threat'].values,
+                                 labels_train['insult'].values,
+                                 labels_train['identity_hate'].values, ]).permute(1, 0).to(device)
+
+    test_labels = torch.tensor([labels_test['toxic'].values,
+                                labels_test['severe_toxic'].values,
+                                labels_test['obscene'].values,
+                                labels_test['threat'].values,
+                                labels_test['insult'].values,
+                                labels_test['identity_hate'].values, ]).permute(1, 0).to(device)
+
+    validation_labels = torch.tensor([labels_validation['toxic'].values,
+                                      labels_validation['severe_toxic'].values,
+                                      labels_validation['obscene'].values,
+                                      labels_validation['threat'].values,
+                                      labels_validation['insult'].values,
+                                      labels_validation['identity_hate'].values, ]).permute(1, 0).to(device)
+else:
+    sentences_train = train.comment.values
+    labels_train = train.label.values
+
+    sentences_test = test.comment.values
+    labels_test = test.label.values
+
+    sentences_validation = validation.comment.values
+    labels_validation = validation.label.values
 
 
-train = pd.read_csv(train_path)
-test = pd.read_csv(test_path)
-validation = pd.read_csv(validation_path)
+# AG10K and tweet50k need to convert their labels to numbers
+if args.data == 'AG10K':
+    from sklearn import preprocessing
 
-sentences_train = train.comment_text.values
-sentences_test = test.comment_text.values
-sentences_validation = validation.comment_text.values
+    le = preprocessing.LabelEncoder()
+    le.fit(["NAG", "CAG", "OAG"])
 
-labels_train = train.iloc[:, -6:].copy()
-labels_test = test.iloc[:, -6:].copy()
-labels_validation = validation.iloc[:, -6:].copy()
+    labels_train = le.transform(labels_train)
+    labels_test = le.transform(labels_test)
+    labels_validation = le.transform(labels_validation)
 
-train_labels = torch.tensor([labels_train['toxic'].values,
-                             labels_train['severe_toxic'].values,
-                             labels_train['obscene'].values,
-                             labels_train['threat'].values,
-                             labels_train['insult'].values,
-                             labels_train['identity_hate'].values, ]).permute(1, 0).to(device)
+elif args.data == 'tweet50k':
+    from sklearn import preprocessing
 
-test_labels = torch.tensor([labels_test['toxic'].values,
-                            labels_test['severe_toxic'].values,
-                            labels_test['obscene'].values,
-                            labels_test['threat'].values,
-                            labels_test['insult'].values,
-                            labels_test['identity_hate'].values, ]).permute(1, 0).to(device)
+    le = preprocessing.LabelEncoder()
+    le.fit(['abusive', 'normal', 'hateful', 'spam'])
 
-validation_labels = torch.tensor([labels_validation['toxic'].values,
-                                  labels_validation['severe_toxic'].values,
-                                  labels_validation['obscene'].values,
-                                  labels_validation['threat'].values,
-                                  labels_validation['insult'].values,
-                                  labels_validation['identity_hate'].values, ]).permute(1, 0).to(device)
+    labels_train = le.transform(labels_train)
+    labels_test = le.transform(labels_test)
+    labels_validation = le.transform(labels_validation)
+
+else:
+    pass
 
 
-#config = RobertaConfig.from_json_file('./ft/lm_model/config.json')
-#print('loaded config')
-# model = RobertaConfig.from_pretrained(pretrained_model_name_or_path = './ft/lm_model', from_tf=False, config=config)
-
-tokenizer = BertTokenizerFast.from_pretrained(str(args.pretrained_tokenizer), do_lower_case=False)
+# put train_labels to tensor and device
+if args.data == 'multi-label':
+    pass
+else:
+    train_labels = torch.tensor(labels_train).to(device)
+    test_labels = torch.tensor(labels_test).to(device)
+    validation_labels = torch.tensor(labels_validation).to(device)
 
 
 class Bert_clf(BertPreTrainedModel):
@@ -168,10 +212,19 @@ from transformers import RobertaTokenizer
 lm_model = RobertaTokenizer.from_pretrained('distilroberta-base', do_lower_case=False)
 '''
 
-model = Bert_clf.from_pretrained(str(args.saved_lm_model),
-                                 num_labels=NUM_LABELS,
-                                 output_attentions=False,
-                                 output_hidden_states=True)
+
+if args.data == 'multi-label':
+    model = Bert_clf.from_pretrained(str(args.data)+'_train.csv_LMmodel',
+                                     num_labels=NUM_LABELS,
+                                     output_attentions=False,
+                                     output_hidden_states=True)
+else:
+    from transformers import BertForSequenceClassification, AdamW, BertConfig
+    model = BertForSequenceClassification.from_pretrained(
+        str(args.data)+'_train.csv_LMmodel',
+        num_labels=NUM_LABELS,
+        output_attentions=False,
+        output_hidden_states=False)
 
 print(model)
 
@@ -181,6 +234,7 @@ print('===========================')
 
 model.to(device)
 
+tokenizer = BertTokenizerFast.from_pretrained(str(args.pretrained_tokenizer), do_lower_case=False)
 
 train_inputs = torch.Tensor()
 train_masks = torch.Tensor()
@@ -244,6 +298,7 @@ validation_data = TensorDataset(validation_inputs, validation_masks, validation_
 validation_sampler = SequentialSampler(validation_data)
 validation_dataloader = DataLoader(validation_data, sampler=validation_sampler, batch_size=batch_size)
 
+
 def train(model, dataloader):
     model.train()
     total_loss = 0
@@ -279,7 +334,6 @@ def train(model, dataloader):
         scheduler.step()
 
     train_loss_this_epoch = total_loss / len(dataloader)
-    loss_values.append(loss)
 
     print("")
     print("  Average training loss: {0:.2f}".format(train_loss_this_epoch))
@@ -311,9 +365,9 @@ def validate(model, dataloader):
 
         valid_loss += loss
 
-    return valid_loss / len(dataloader)
+    return valid_loss / len(dataloader), f1_micro_total / len(dataloader)
     # Report the final accuracy for this validation run.
-    print("  F1 Micro: {0:.2f}".format(f1_micro_total / len(dataloader)))
+
 
 
 def metrics(preds, label):
@@ -359,11 +413,7 @@ for epoch_i in range(0, epochs):
     valid_loss = validate(model, validation_dataloader)
     print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
-    '''
-    if valid_loss < best_valid_loss:
-        best_valid_loss = valid_los
-        '''
-torch.save(model.state_dict(), str(args.resultpath) + 'Bert_ft_multi-label_model.pt')
+torch.save(model.state_dict(), str(args.resultpath) + str(args.data) + 'cls_model.pt')
 
 print("")
 print("Training complete!")
@@ -375,45 +425,74 @@ prediction_dataloader = DataLoader(prediction_data, sampler=prediction_sampler, 
 model.eval()
 
 predictions = torch.Tensor().to(device)
-labels = torch.Tensor().to(device)
-for batch in prediction_dataloader:
-    # Add batch to GPU
-    batch = tuple(t.to(device) for t in batch)
 
-    # Unpack the inputs from our dataloader
-    b_input_ids, b_input_mask, b_labels = batch
 
-    with torch.no_grad():
-        # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
-        outputs = model(b_input_ids.long(), token_type_ids=None,
-                        attention_mask=b_input_mask)  # return: loss(only if label is given), logit
-    logits = outputs
-    rounded_preds = torch.round(torch.sigmoid(logits))
-    predictions = torch.cat((predictions, rounded_preds.float()))
-    labels = torch.cat((labels, b_labels.float()))
-print('    DONE.')
+if args.data == 'multi-label':
+    labels = torch.Tensor().to(device)
+    for batch in prediction_dataloader:
+        # Add batch to GPU
+        batch = tuple(t.to(device) for t in batch)
 
-acc, f1_micro, f1_macro = metrics(predictions, labels)
-print("acc is {}, micro is {}, macro is {}".format(acc, f1_micro, f1_macro))
-predictions_np = predictions.cpu().numpy()
-predictions_df = pd.DataFrame(predictions_np,
-                              columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
+        # Unpack the inputs from our dataloader
+        b_input_ids, b_input_mask, b_labels = batch
 
-result = pd.concat([test, predictions_df], axis=1)
+        with torch.no_grad():
+            # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
+            outputs = model(b_input_ids.long(), token_type_ids=None,
+                            attention_mask=b_input_mask)  # return: loss(only if label is given), logit
+        logits = outputs
+        rounded_preds = torch.round(torch.sigmoid(logits))
+        predictions = torch.cat((predictions, rounded_preds.float()))
+        labels = torch.cat((labels, b_labels.float()))
+    print(' prediction    DONE.')
 
-f1_toxic = f1_score(result['toxic'], result['pred_toxic'])
-f1_severe_toxic = f1_score(result['severe_toxic'], result['pred_severe_toxic'])
-f1_obscene = f1_score(result['obscene'], result['pred_obscene'])
-f1_threat = f1_score(result['threat'], result['pred_threat'])
-f1_insult = f1_score(result['insult'], result['pred_insult'])
-f1_identity_hate = f1_score(result['identity_hate'], result['pred_identity_hate'])
-print("f1_toxic:", f1_toxic)
-print("f1_severe_toxic:", f1_severe_toxic)
-print("f1_threat:", f1_threat)
-print("f1_obscene:", f1_obscene)
-print("f1_insult:", f1_insult)
-print("f1_identity_hate:", f1_identity_hate)
-print("macro F1:", (f1_toxic + f1_severe_toxic + f1_obscene + f1_threat + f1_insult + f1_identity_hate)/6)
+    acc, f1_micro, f1_macro = metrics(predictions, labels)
+    print("acc is {}, micro is {}, macro is {}".format(acc, f1_micro, f1_macro))
+    predictions_np = predictions.cpu().numpy()
+    predictions_df = pd.DataFrame(predictions_np,
+                                  columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
 
-result.to_csv(str(args.resultpath) + 'ft_result.csv', sep='\t')
+    print('   TEST', test)
+    result = pd.concat([test, predictions_df], axis=1)
+
+
+    f1_toxic = f1_score(result['toxic'], result['pred_toxic'])
+    f1_severe_toxic = f1_score(result['severe_toxic'], result['pred_severe_toxic'])
+    f1_obscene = f1_score(result['obscene'], result['pred_obscene'])
+    f1_threat = f1_score(result['threat'], result['pred_threat'])
+    f1_insult = f1_score(result['insult'], result['pred_insult'])
+    f1_identity_hate = f1_score(result['identity_hate'], result['pred_identity_hate'])
+    print("f1_toxic:", f1_toxic)
+    print("f1_severe_toxic:", f1_severe_toxic)
+    print("f1_threat:", f1_threat)
+    print("f1_obscene:", f1_obscene)
+    print("f1_insult:", f1_insult)
+    print("f1_identity_hate:", f1_identity_hate)
+    print("macro F1:", (f1_toxic + f1_severe_toxic + f1_obscene + f1_threat + f1_insult + f1_identity_hate)/6)
+    result.to_csv(str(args.resultpath) + str(args.data) + '_ft_cls_result.csv', sep='\t')
+else:
+    for batch in prediction_dataloader:
+        batch = tuple(t.to(device) for t in batch)
+
+        b_input_ids, b_input_mask, b_labels = batch
+
+        with torch.no_grad():
+            # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
+            outputs = model(b_input_ids.long(), token_type_ids=None,
+                            attention_mask=b_input_mask)  # return: loss(only if label is given), logit
+        logits = outputs[0]
+        softmax = torch.nn.functional.softmax(logits, dim=1)
+        prediction = softmax.argmax(dim=1)
+        predictions = torch.cat((predictions, prediction.float()))
+        # true_labels = torch.cat((true_labels, b_labels.float()))
+    print('    DONE.')
+    predictions_np = predictions.cpu().tolist()
+    test['prediction'] = predictions_np
+    test['label_encoded'] = labels_test
+    f1_micro = f1_score(test['label_encoded'], test['prediction'], average='micro')
+    f1_macro = f1_score(test['label_encoded'], test['prediction'], average='macro')
+    print('RESULTS -----------')
+    print(str(args.data))
+    print('f1_micro:', f1_micro, 'f1_macro:', f1_macro)
+    test.to_csv(str(args.resultpath) + str(args.data) + '_ft_cls_result.csv')
 
