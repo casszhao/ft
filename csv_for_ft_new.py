@@ -112,7 +112,7 @@ print('===========================')
 
 from transformers import LineByLineTextDataset
 #paths = [str(x) for x in Path(str(args.txtfolder)).glob("**/*.txt")]
-dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= 'listfile.txt', block_size=128)
+dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= str(args.csvfile) + '.txt', block_size=128)
 print('created dataset from folders')
 
 from transformers import DataCollatorForLanguageModeling
