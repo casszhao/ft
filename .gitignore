@@ -3,6 +3,8 @@
 sample_data/
 *csv
 *.pt
+*.txt
 listfile.txt
 runs/
 lm_model/
+/multi-label_test.csv.txt

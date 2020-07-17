@@ -28,7 +28,6 @@ import regex as re
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
 def basicPreprocess(text):
     try:
         processed_text = text.lower()
@@ -127,7 +126,7 @@ from transformers import Trainer, TrainingArguments
 training_args = TrainingArguments(
     do_train=True,
     do_predict=True,
-    output_dir=str(args.csvfile)+'_model',
+    output_dir=str(args.csvfile)+'_LMmodel',
     overwrite_output_dir=True,
     num_train_epochs=1,
     per_device_train_batch_size=32,
@@ -147,7 +146,7 @@ trainer.train() # what savedresults are 0. config.json 1. pytorch_model.bin 2. t
 
 ''' Save final model (+ lm_model + config) to disk '''
 
-trainer.save_model(str(args.csvfile)+'_model')
+trainer.save_model(str(args.csvfile)+'_LMmodel')
 #trainer.save_model('./lm_model/')
 #reload using from_pretrained()
 print('model saved')
