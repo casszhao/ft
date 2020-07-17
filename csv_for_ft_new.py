@@ -18,7 +18,6 @@ parser.add_argument('--textcolname', type=str)
 # 3
 parser.add_argument('--csvfile', type=str, help= 'a csv file, to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
 # 4
-parser.add_argument('--saved_lm_model', type=str, help= 'where to save the trained language model')
 args = parser.parse_args()
 
 import pandas as pd
