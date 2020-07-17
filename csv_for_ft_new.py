@@ -48,7 +48,7 @@ data[str(args.textcolname)] = data[str(args.textcolname)].apply(basicPreprocess)
 data = data[str(args.textcolname)]
 data = data.replace('\n', ' ')
 
-with open('listfile.txt', 'w') as filehandle:
+with open(str(args.csvfile) + '.txt', 'w') as filehandle:
     for listitem in data:
         filehandle.write('%s\n' % listitem)
 
@@ -127,7 +127,7 @@ from transformers import Trainer, TrainingArguments
 training_args = TrainingArguments(
     do_train=True,
     do_predict=True,
-    output_dir=str(args.saved_lm_model),
+    output_dir=str(args.csvfile)+'_model',
     overwrite_output_dir=True,
     num_train_epochs=1,
     per_device_train_batch_size=32,
@@ -147,7 +147,7 @@ trainer.train() # what savedresults are 0. config.json 1. pytorch_model.bin 2. t
 
 ''' Save final model (+ lm_model + config) to disk '''
 
-trainer.save_model(str(args.saved_lm_model))
+trainer.save_model(str(args.csvfile)+'_model')
 #trainer.save_model('./lm_model/')
 #reload using from_pretrained()
 print('model saved')
