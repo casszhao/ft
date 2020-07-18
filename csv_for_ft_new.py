@@ -148,7 +148,7 @@ trainer.train() # what savedresults are 0. config.json 1. pytorch_model.bin 2. t
 trainer.save_model(str(args.csvfile)+'_LMmodel')
 #trainer.save_model('./lm_model/')
 #reload using from_pretrained()
-print('model saved as ', str(args.csvfile)+'_LMmodel')
+print('the language model saved as ', str(args.csvfile)+'_LMmodel')
 
 ''' check the trained lm'''
 
