@@ -4,7 +4,7 @@ import torch.nn as nn
 import time
 from transformers import AdamW
 import pandas as pd
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, classification_report
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 import argparse
 import datetime
@@ -67,14 +67,14 @@ validation_path = str(args.data) + '_validation.csv'
 if args.testing:
     train = pd.read_csv(train_path).sample(10)
     test = pd.read_csv(test_path).sample(10)
-    validation = pd.read_csv(validation_path).sample(10)
+    validation = pd.read_csv(validation_path).sample(10).dropna()
 elif args.running:
     train = pd.read_csv(train_path)
     test = pd.read_csv(test_path)
-    validation = pd.read_csv(validation_path)
+    validation = pd.read_csv(validation_path).dropna()
 else:
     print('need to define parameter, it is "--running" or "--testing"')
-print('   TEST', test)
+
 
 if args.data == 'multi-label':
     sentences_train = train.comment_text.values
@@ -105,7 +105,7 @@ if args.data == 'multi-label':
                                       labels_validation['threat'].values,
                                       labels_validation['insult'].values,
                                       labels_validation['identity_hate'].values, ]).permute(1, 0).to(device)
-else:
+elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
     sentences_train = train.comment.values
     labels_train = train.label.values
 
@@ -114,7 +114,8 @@ else:
 
     sentences_validation = validation.comment.values
     labels_validation = validation.label.values
-
+else:
+    print('the definition of args.data is invalid')
 
 # AG10K and tweet50k need to convert their labels to numbers
 if args.data == 'AG10K':
@@ -313,7 +314,7 @@ def train(model, dataloader):
 
         b_input_ids = batch[0].long().to(device)
         b_input_mask = batch[1].long().to(device)
-        b_labels = batch[2].float().to(device)
+        b_labels = batch[2].long().to(device)
 
         optimizer.zero_grad()
 
@@ -340,6 +341,36 @@ def train(model, dataloader):
     return train_loss_this_epoch
 
 
+def validate_multilable(model, dataloader):
+    print(" === Validation ===")
+    model.eval()
+    valid_loss, f1_micro_total = 0, 0
+
+    for step, batch in enumerate(dataloader):
+        batch = tuple(t.to(device) for t in batch)
+
+        # Unpack the inputs from our dataloader
+        b_input_ids = batch[0].long()
+        b_input_mask = batch[1].long()
+        b_labels = batch[2].long()
+
+        with torch.no_grad():
+            loss, logits = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
+
+        rounded_preds = torch.round(torch.sigmoid(logits))  # (batch size, 6)
+        prediction = rounded_preds.detach().cpu().numpy()
+
+        labels = b_labels.to('cpu').numpy()
+        print(labels)
+        print(prediction)
+        f1_micro = f1_score(labels, prediction, average='micro', zero_division=1)
+        f1_micro_total += f1_micro
+
+        valid_loss += loss
+
+    return valid_loss / len(dataloader), f1_micro_total / len(dataloader)
+    # Report the final accuracy for this validation run.
+
 def validate(model, dataloader):
     print(" === Validation ===")
     model.eval()
@@ -351,15 +382,16 @@ def validate(model, dataloader):
         # Unpack the inputs from our dataloader
         b_input_ids = batch[0].long()
         b_input_mask = batch[1].long()
-        b_labels = batch[2].float()
+        b_labels = batch[2].long()
 
         with torch.no_grad():
             loss, logits = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
 
-        rounded_preds = torch.round(torch.sigmoid(logits))  # (batch size, 6)
-        prediction = rounded_preds.detach().cpu().numpy()
+        softmax = torch.nn.functional.softmax(logits, dim=1)
+        prediction = softmax.argmax(dim=1).detach().cpu().numpy()
 
         labels = b_labels.to('cpu').numpy()
+
         f1_micro = f1_score(labels, prediction, average='micro', zero_division=1)
         f1_micro_total += f1_micro
 
@@ -367,7 +399,6 @@ def validate(model, dataloader):
 
     return valid_loss / len(dataloader), f1_micro_total / len(dataloader)
     # Report the final accuracy for this validation run.
-
 
 
 def metrics(preds, label):
@@ -494,5 +525,6 @@ else:
     print('RESULTS -----------')
     print(str(args.data))
     print('f1_micro:', f1_micro, 'f1_macro:', f1_macro)
+    print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
     test.to_csv(str(args.resultpath) + str(args.data) + '_ft_cls_result.csv')
 
