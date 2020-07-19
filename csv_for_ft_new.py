@@ -143,7 +143,6 @@ trainer = Trainer(
 trainer.train()
 ''' Save final model (+ lm_model + config) to disk '''
 
-model.state_dict(),
 trainer.save_model(str(args.csvfile)+'_LMmodel')
 print('the language model saved as ', str(args.csvfile)+'_LMmodel')
 
