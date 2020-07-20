@@ -15,6 +15,8 @@ group.add_argument('--testing', action='store_true', help='testing using the sma
 
 # 2 text col name
 parser.add_argument('--textcolname', type=str)
+
+parser.add_argument('--num_train_epochs', '-e', type=int)
 # 3
 parser.add_argument('--csvfile', type=str, help= 'a csv file, to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
 # 4
@@ -126,7 +128,7 @@ training_args = TrainingArguments(
     do_predict=True,
     output_dir=str(args.csvfile)+'_LMmodel',
     overwrite_output_dir=True,
-    num_train_epochs=1,
+    num_train_epochs= args.num_train_epochs,
     per_device_train_batch_size=32,
     save_steps=1_000,
     save_total_limit=2,
