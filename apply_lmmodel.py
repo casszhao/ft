@@ -159,7 +159,7 @@ lm_model = RobertaTokenizer.from_pretrained('distilroberta-base', do_lower_case=
 
 
 if args.data == 'multi-label':
-    from multi-label_fns import Bert_clf, validate_multilable, train_multilabel
+    from multi_label_fns import Bert_clf, validate_multilable, train_multilabel
     model = Bert_clf.from_pretrained(str(args.data)+'_train.csv_LMmodel',
                                      num_labels=NUM_LABELS,
                                      output_attentions=False,
