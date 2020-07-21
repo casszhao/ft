@@ -24,10 +24,9 @@ parser = argparse.ArgumentParser(description='run fine-tuned model on multi-labe
 # parser.add_argument('trainable', type=str, action='store', choices = ['fix','nofix'])
 # 0
 parser.add_argument('data', type=str, choices=['multi-label', 'wassem', 'AG10K', 'tweet50k'])
-parser.add_argument('saved_lm_model', type=str, help= 'where to save the trained language model')
+parser.add_argument('--saved_lm_model', type=str, help= 'where to save the trained language model')
+parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA'])
 
-# 1
-parser.add_argument('--pretrained_tokenizer', type=str, help= 'bert-base-cased, bert-large-uncased')
 # 2
 parser.add_argument('-e', '--epochs', type=int, default=10, metavar='', help='how many epochs')
 # 3
@@ -35,7 +34,9 @@ group = parser.add_mutually_exclusive_group()
 group.add_argument('--running', action='store_true', help='running using the original big dataset')
 group.add_argument('--testing', action='store_true', help='testing using the small sample.txt dataset')
 
-#  pre_trained tokenizer no need
+group2 = parser.add_mutually_exclusive_group()
+group2.add_argument('--fix', action='store_true', help='fix the bert layers')
+group2.add_argument('--nofix', action='store_true', help='no fix the bert layers')
 
 # 4
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
@@ -219,23 +220,58 @@ if args.data == 'multi-label':
                                      num_labels=NUM_LABELS,
                                      output_attentions=False,
                                      output_hidden_states=True)
+elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
+    if args.BertModel == "Bert":
+        from transformers import BertTokenizer
+        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+        print(' ')
+        print("using BertTokenizer")
+    elif args.BertModel == "RoBerta":
+        from transformers import RobertaTokenizer, RobertaForSequenceClassification, AdamW, RobertaConfig
+        tokenizer = RobertaTokenizer.from_pretrained('distilroberta-base', do_lower_case=False)
+        model = RobertaForSequenceClassification.from_pretrained(
+            "distilroberta-base",
+            num_labels=NUM_LABELS,
+            output_attentions=False,
+            output_hidden_states=False)
+        print(' ')
+        print("using Roberta")
+    elif args.BertModel == "XLM":
+        from transformers import XLMTokenizer, XLMConfig
+
+        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
+        print(' ')
+        print("using XLMTokenizer")
+    else:
+        print('need to define using which model, format is like "Bert", "RoBerta", "XLM"')
 else:
-    from transformers import BertForSequenceClassification, AdamW, BertConfig
-    model = BertForSequenceClassification.from_pretrained(
-        str(args.data)+'_train.csv_LMmodel',
-        num_labels=NUM_LABELS,
-        output_attentions=False,
-        output_hidden_states=False)
+    print('need to define using which models')
 
-print(model)
+print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
+params = list(model.named_parameters())
 
-print('===========================')
-print(f'The model now has {count_parameters(model):,} trainable parameters')
-print('===========================')
+if args.fix:
+    if args.BertModel == 'Bert':
+        for param in model.bert.parameters():
+            param.requires_grad = False
+    elif args.BertModel == 'RoBerta':
+        for p in params[5:21]:
+            p[1].requires_grad = False
+    elif args.BertModel == 'XLM' or 'XLNet':
+        for param in model.transformer.parameters():
+            param.requires_grad = False
+    elif args.BertModel == 'ELECTRA':
+        for param in model.electra.parameters():
+            param.requires_grad = False
+
+    print(f'{args.BertModel}  (FFFrozen paras) has {count_parameters(model):,} trainable parameters')
+elif args.nofix:
+    pass
+else:
+    print('need to define fix or not fix by --fix or --nofix')
 
 model.to(device)
 
-tokenizer = BertTokenizerFast.from_pretrained(str(args.pretrained_tokenizer), do_lower_case=False)
 
 train_inputs = torch.Tensor()
 train_masks = torch.Tensor()
@@ -299,6 +335,45 @@ validation_data = TensorDataset(validation_inputs, validation_masks, validation_
 validation_sampler = SequentialSampler(validation_data)
 validation_dataloader = DataLoader(validation_data, sampler=validation_sampler, batch_size=batch_size)
 
+def train_multilabel(model, dataloader):
+    model.train()
+    total_loss = 0
+    for step, batch in enumerate(dataloader):
+
+        if step % 2000 == 0 and not step == 0:
+            # Calculate elapsed time in minutes.
+            elapsed = format_time(time.time() - t0)
+
+            # Report progress.
+            print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
+
+        b_input_ids = batch[0].long().to(device)
+        b_input_mask = batch[1].long().to(device)
+        b_labels = batch[2].float().to(device)
+
+        optimizer.zero_grad()
+
+        loss, logit = model(b_input_ids,
+                            token_type_ids=None,
+                            attention_mask=b_input_mask,
+                            labels=b_labels,
+                            )
+
+        total_loss += loss.item()
+
+        loss.backward()
+
+        # Clip the norm of the gradients to 1.0.
+        # This is to help prevent the "exploding gradients" problem.
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        scheduler.step()
+
+    train_loss_this_epoch = total_loss / len(dataloader)
+
+    print("")
+    print("  Average training loss: {0:.2f}".format(train_loss_this_epoch))
+    return train_loss_this_epoch
 
 def train(model, dataloader):
     model.train()
@@ -352,7 +427,7 @@ def validate_multilable(model, dataloader):
         # Unpack the inputs from our dataloader
         b_input_ids = batch[0].long()
         b_input_mask = batch[1].long()
-        b_labels = batch[2].long()
+        b_labels = batch[2].float()
 
         with torch.no_grad():
             loss, logits = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
@@ -435,13 +510,19 @@ for epoch_i in range(0, epochs):
     print("")
     print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
     t0 = time.time()
-    train_loss = train(model, train_dataloader)
+    if args.data == 'multi-label':
+        train_loss = train_multilabel(model, train_dataloader)
+    else:
+        train_loss = train(model, train_dataloader)
     print("  Training epcoh took: {:}".format(format_time(time.time() - t0)))
     print("")
     print("Running Validation...")
 
     t0 = time.time()
-    valid_loss = validate(model, validation_dataloader)
+    if args.data == 'multi-label':
+        valid_loss = validate_multilable(model, validation_dataloader)
+    else:
+        valid_loss = validate(model, validation_dataloader)
     print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
 torch.save(model.state_dict(), str(args.resultpath) + str(args.data) + 'cls_model.pt')
@@ -483,7 +564,8 @@ if args.data == 'multi-label':
     predictions_df = pd.DataFrame(predictions_np,
                                   columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
 
-    print('   TEST', test)
+    print('   TEST')
+    print(test.head())
     result = pd.concat([test, predictions_df], axis=1)
 
 
@@ -526,5 +608,5 @@ else:
     print(str(args.data))
     print('f1_micro:', f1_micro, 'f1_macro:', f1_macro)
     print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
-    test.to_csv(str(args.resultpath) + str(args.data) + '_ft_cls_result.csv')
+    test.to_csv(str(args.resultpath) + str(args.data) + '_' + str(args.BertModel) + '_fix_result.csv')
 
