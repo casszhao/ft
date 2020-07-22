@@ -399,6 +399,12 @@ scheduler = get_linear_schedule_with_warmup(optimizer,
                                             num_warmup_steps=0,  # Default value in run_glue.py
                                             num_training_steps=total_steps)
 
+
+if args.saved_lm_model != None:
+    resultname = str(args.saved_lm_model) + '_' + str(args.data)
+else:
+    resultname = str(args.BertModel) + '_' + str(args.data)
+
 best_valid_loss = float('inf')
 loss_values = []
 
@@ -422,7 +428,7 @@ for epoch_i in range(0, epochs):
         valid_loss = validate(model, validation_dataloader)
     print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
-torch.save(model.state_dict(), str(args.resultpath) + str(args.data) + 'cls_model.pt')
+torch.save(model.state_dict(), str(args.resultpath) + str(args.data) + '_' + resultname + '_model.pt')
 
 print("")
 print("Training complete!")
@@ -435,10 +441,7 @@ model.eval()
 
 predictions = torch.Tensor().to(device)
 
-if args.saved_lm_model != None:
-    resultname = str(args.saved_lm_model) + '_' + str(args.data)
-else:
-    resultname = str(args.BertModel) + '_' + str(args.data)
+
 
 if args.data == 'multi-label':
     labels = torch.Tensor().to(device)
