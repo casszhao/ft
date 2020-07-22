@@ -435,6 +435,10 @@ model.eval()
 
 predictions = torch.Tensor().to(device)
 
+if args.saved_lm_model != None:
+    resultname = str(args.saved_lm_model) + '_' + str(args.data)
+else:
+    resultname = str(args.BertModel) + '_' + str(args.data)
 
 if args.data == 'multi-label':
     labels = torch.Tensor().to(device)
@@ -505,5 +509,5 @@ else:
     print(str(args.data))
     print('f1_micro:', f1_micro, 'f1_macro:', f1_macro)
     print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
-    test.to_csv(str(args.resultpath) + str(args.data) + '_' + str(args.BertModel) + '_fix_result.csv')
+    test.to_csv(str(args.resultpath) + resultname + '_result.csv')
 
