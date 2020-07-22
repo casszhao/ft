@@ -40,7 +40,7 @@ def basicPreprocess(text):
 
 
 if args.testing:
-    data = pd.read_csv(str(args.csvfile)).sample(10)
+    data = pd.read_csv(str(args.csvfile)).sample(1000)
 elif args.running:
     data = pd.read_csv(str(args.csvfile))
 
@@ -66,6 +66,61 @@ model = BertForMaskedLM.from_pretrained(str(args.ftLMpath), config=config)
 print('===========================')
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 print('===========================')
+
+params = list(model.named_parameters())
+
+print('The BERT model has {:} different named parameters.\n'.format(len(params)))
+
+print('==== Embedding Layer ====\n')
+
+for p in params[0:5]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+
+print('\n==== Transformer 0====\n')
+for p in params[5:21]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 1====\n')
+for p in params[21:37]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 2====\n')
+for p in params[37:53]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 3====\n')
+for p in params[53:69]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 4====\n')
+for p in params[69:85]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 5====\n')
+for p in params[85:101]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 6====\n')
+for p in params[101:117]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 7====\n')
+for p in params[117:133]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 8====\n')
+for p in params[133:149]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 9====\n')
+for p in params[149:165]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 10====\n')
+for p in params[165:181]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 11====\n')
+for p in params[181:197]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer NNNNN====\n')
+for p in params[197:-4]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+
+
+print('\n==== Output Layer ====\n')
+
+for p in params[-4:]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
 def freeze_layer_fun(freeze_layer):
     for name, param in model.named_parameters():

@@ -193,6 +193,19 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
         tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
         print(' ')
         print("using XLMTokenizer")
+
+
+    elif args.saved_lm_model != None:
+        from transformers import BertTokenizer, BertForSequenceClassification, AdamW, BertConfig
+        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+        model = BertForSequenceClassification.from_pretrained(
+            str(args.saved_lm_model),
+            num_labels=NUM_LABELS,
+            output_attentions=False,
+            output_hidden_states=False)
+
+        print(' ')
+        print("using FFFFFine tuned LM: ", args.saved_lm_model)
     else:
         print('need to define using which model, format is like "Bert", "RoBerta", "XLM"')
 else:
