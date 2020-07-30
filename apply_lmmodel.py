@@ -1,3 +1,5 @@
+'''apply fine-tuned bert based modle on four datasets'''
+
 from transformers import BertPreTrainedModel, BertModel, BertTokenizerFast
 import torch
 import torch.nn as nn

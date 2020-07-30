@@ -19,6 +19,9 @@ parser.add_argument('--textcolname', type=str)
 parser.add_argument('--num_train_epochs', '-e', type=int)
 # 3
 parser.add_argument('--csvfile', type=str, help= 'a csv file, to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
+
+parser.add_argument('--resultpath', type=str, help='where to save the LM model')
+
 # 4
 args = parser.parse_args()
 
@@ -80,6 +83,10 @@ freeze_layer_1 = '.1.'
 freeze_layer_fun(freeze_layer_1)
 
 freeze_layer_2 = '.2.'
+print(variable.grad)
+
+print(variable.data)
+print(variable.data.numpy())
 freeze_layer_fun(freeze_layer_2)
 
 freeze_layer_3 = '.3.'
@@ -123,10 +130,12 @@ data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, m
 
 from transformers import Trainer, TrainingArguments
 
+dir = str(args.resultpath) + str(args.csvfile) + '_e' + str(args.num_train_epochs) + '_LMmodel'
+
 training_args = TrainingArguments(
     do_train=True,
     do_predict=True,
-    output_dir=str(args.csvfile)+'_LMmodel',
+    output_dir=dir,
     overwrite_output_dir=True,
     num_train_epochs= args.num_train_epochs,
     per_device_train_batch_size=32,
@@ -145,8 +154,8 @@ trainer = Trainer(
 trainer.train()
 ''' Save final model (+ lm_model + config) to disk '''
 
-trainer.save_model(str(args.csvfile)+'_LMmodel')
-print('the language model saved as ', str(args.csvfile)+'_LMmodel')
+trainer.save_model(str(args.resultpath) + str(args.csvfile) +'_e' + str(args.num_train_epochs) +'_LMmodel')
+print('the language model saved as ', str(args.resultpath) + str(args.csvfile) +'_e' + str(args.num_train_epochs) +'_LMmodel')
 
 ''' check the trained lm'''
 

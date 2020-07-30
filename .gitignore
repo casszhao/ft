@@ -7,5 +7,7 @@ sample_data/
 listfile.txt
 runs/
 lm_model/
+*.csv_LMmodel
 /multi-label_test.csv.txt
 /impretty.py
+/AG10K_train.csv_LMmodel/
