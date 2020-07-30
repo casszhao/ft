@@ -514,5 +514,5 @@ else:
     print(str(args.data))
     print('f1_micro:', f1_micro, 'f1_macro:', f1_macro)
     print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
-    test.to_csv(str(resultname + '_result.csv')
+    test.to_csv(str(resultname + '_result.csv'))
 
