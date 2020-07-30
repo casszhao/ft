@@ -403,7 +403,7 @@ scheduler = get_linear_schedule_with_warmup(optimizer,
 
 
 if args.saved_lm_model != None:
-    resultname = str(args.saved_lm_model) + '_' + str(args.data)
+    resultname = str(args.saved_lm_model)
 else:
     resultname = str(args.BertModel) + '_' + str(args.data)
 
@@ -514,5 +514,5 @@ else:
     print(str(args.data))
     print('f1_micro:', f1_micro, 'f1_macro:', f1_macro)
     print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
-    test.to_csv(str(args.resultpath) + resultname + '_result.csv')
+    test.to_csv(str(resultname + '_result.csv')
 
