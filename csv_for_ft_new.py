@@ -84,7 +84,7 @@ elif args.LM == 'RoBerta':
 elif args.LM == 'XLM':
     from transformers import XLMConfig, XLMTokenizer, XLMWithLMHeadModel
     config = XLMConfig(
-        vocab_size=30145,
+        vocab_size=64139,
         emb_dim = 1024,
         max_position_embeddings=512,
         n_heads = 16,
