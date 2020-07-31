@@ -430,7 +430,7 @@ for epoch_i in range(0, epochs):
         valid_loss = validate(model, validation_dataloader)
     print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
-torch.save(model.state_dict(), str(args.resultpath) + resultname + '_model.pt')
+#torch.save(model.state_dict(), str(args.resultpath) + resultname + '_model.pt')
 
 print("")
 print("Training complete!")
