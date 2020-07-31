@@ -31,7 +31,7 @@ import regex as re
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-'''  already got .txt file for each dataset, so use it directly
+
 def basicPreprocess(text):
     try:
         processed_text = text.lower()
@@ -46,7 +46,7 @@ if args.testing:
 elif args.running:
     data = pd.read_csv(str(args.csvfile))
 
-
+'''
 data[str(args.textcolname)] = data[str(args.textcolname)].apply(basicPreprocess).dropna()
 data = data[str(args.textcolname)]
 data = data.replace('\n', ' ')
@@ -55,8 +55,7 @@ data = data.replace('\n', ' ')
 with open(str(args.csvfile) + '.txt', 'w') as filehandle:
     for listitem in data:
         filehandle.write('%s\n' % listitem)
-        
-'''
+        '''
 
 from transformers import BertTokenizerFast, BertConfig, BertForMaskedLM
 
@@ -122,12 +121,13 @@ print(f'The model now has {count_parameters(model):,} trainable parameters')
 print('===========================')
 
 
-from transformers import LineByLineTextDataset
+from transformers import LineByLineTextDataset, DataCollatorForLanguageModeling
 #paths = [str(x) for x in Path(str(args.txtfolder)).glob("**/*.txt")]
-dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= str(args.csvfile) + '.txt', block_size=128)
+file_path = str(args.csvfile)+".txt"
+print(file_path)
+dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= file_path, block_size=128)
 print('created dataset from folders')
 
-from transformers import DataCollatorForLanguageModeling
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
 
 # initial the trainer
