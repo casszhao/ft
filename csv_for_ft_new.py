@@ -6,6 +6,7 @@ including:
 
 import argparse
 import time
+import datetime
 
 parser = argparse.ArgumentParser(description='convert json to txt for later training')
 # 0
