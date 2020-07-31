@@ -5,6 +5,8 @@ including:
 '''
 
 import argparse
+import time
+
 parser = argparse.ArgumentParser(description='convert json to txt for later training')
 # 0
 parser.add_argument('--LM', type=str, action='store', choices = ['Bert','RoBerta','XLM'])
@@ -185,7 +187,16 @@ trainer = Trainer(
     prediction_loss_only=True,
 )
 
+def format_time(elapsed):
+    elapsed_rounded = int(round((elapsed)))
+    return str(datetime.timedelta(seconds=elapsed_rounded))
+
+t0 = time.time()
 trainer.train()
+elapsed = format_time(time.time() - t0)
+print('============= training LM time: ', elapsed)
+
+
 ''' Save final model (+ lm_model + config) to disk '''
 
 trainer.save_model(dir)
