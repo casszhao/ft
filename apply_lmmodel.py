@@ -181,9 +181,9 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
         print("using Bert")
     elif args.BertModel == "RoBerta":
         from transformers import RobertaTokenizer, RobertaForSequenceClassification, AdamW, RobertaConfig
-        tokenizer = RobertaTokenizer.from_pretrained('distilroberta-base', do_lower_case=False)
+        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
         model = RobertaForSequenceClassification.from_pretrained(
-            "distilroberta-base",
+            "roberta-base",
             num_labels=NUM_LABELS,
             output_attentions=False,
             output_hidden_states=False)
