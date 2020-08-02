@@ -1,10 +1,11 @@
 '''apply fine-tuned bert based modle on four datasets'''
 
-from transformers import BertPreTrainedModel, BertModel, BertTokenizerFast
+from transformers import BertPreTrainedModel, BertModel
 import torch
-import torch.nn as nn
+
 import time
 from transformers import AdamW
+import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score, classification_report
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
@@ -26,7 +27,7 @@ parser = argparse.ArgumentParser(description='run fine-tuned model on multi-labe
 # parser.add_argument('trainable', type=str, action='store', choices = ['fix','nofix'])
 # 0
 parser.add_argument('data', type=str, choices=['multi-label', 'wassem', 'AG10K', 'tweet50k'])
-parser.add_argument('--saved_lm_model', type=str, help= 'where to save the trained language model')
+parser.add_argument('--saved_lm_model', type=str, help= 'where is the saved trained language model, including path and name')
 parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA'])
 
 # 2
@@ -146,6 +147,7 @@ else:
     pass
 
 
+
 # put train_labels to tensor and device
 if args.data == 'multi-label':
     pass
@@ -160,22 +162,44 @@ lm_model = RobertaTokenizer.from_pretrained('distilroberta-base', do_lower_case=
 '''
 
 
+#######################     SET UP TOKENIZER AND MODEL
+'''
 if args.data == 'multi-label':
-    from multi_label_fns import Bert_clf, validate_multilable, train_multilabel
+    from multi_label_fns import validate_multilable, train_multilabel
     if args.BertModel == "Bert":
-        model = Bert_clf.from_pretrained(str(args.data) + '_train.csv_LMmodel',
+        from multi_label_fns import Bert_clf
+        from transformers import BertTokenizer
+        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+        model = Bert_clf.from_pretrained(str(args.saved_lm_model),
                                          num_labels=NUM_LABELS,
                                          output_attentions=False,
                                          output_hidden_states=True)
         print('using Bert')
+
     elif args.BertModel == "RoBerta":
+        from multi_label_fns import RoBerta_clf
+        from transformers import RobertaTokenizer
+        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
+        model = RoBerta_clf.from_pretrained(str(args.saved_lm_model),
+                                            num_labels=NUM_LABELS,
+                                            output_attentions=False,
+                                            output_hidden_states=True)
         print("using Roberta")
 
     elif args.BertModel == "XLM":
+        from multi_label_fns import XLM_clf
+        from transformers import XLMTokenizer
+        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024')
+        from bert_models import XLM_clf
+
+        model = XLM_clf.from_pretrained('xlm-mlm-enfr-1024',
+                                        num_labels=NUM_LABELS,
+                                        output_attentions=False,
+                                        output_hidden_states=True)
         print("using XLM")
 
     elif args.saved_lm_model != None:
-        from transformers import BertTokenizer, BertForSequenceClassification, AdamW, BertConfig
+        from transformers import BertForSequenceClassification, AdamW, BertConfig
 
         tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
         model = BertForSequenceClassification.from_pretrained(
@@ -235,6 +259,104 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
         print('need to define using which model, format is like "Bert", "RoBerta", "XLM"')
 else:
     print('need to define using which models')
+
+
+'''
+
+##### set up model, first, decide model version (model_name), for BertModel, need to define again.
+##################  second, decide using multi-label or multi-class
+##################  third, decide which model by using if xx in xx, and then set up the tokenizer and model
+
+if args.saved_lm_model != None:
+    model_name = str(args.saved_lm_model)
+elif args.BertModel != None:
+    if args.BertModel == 'Bert':
+        model_name = 'bert-base-cased'
+    elif args.BertModel == 'RoBerta':
+        model_name = 'roberta-base'
+    elif args.BertModel == 'RoBerta':
+        model_name = 'xlm-mlm-enfr-1024'
+else:
+    print('the model name is not set up, it should be from a pretrained model file(as args.saved_lm_model) or '
+          'bert-base-cased or roberta-base or xlm-mlm-enfr-1024')
+print(model_name)
+
+
+if args.data == 'multi-label':
+    from multi_label_fns import validate_multilable, train_multilabel
+    if 'Bert' or 'bert' in model_name and 'RoBerta' not in model_name and 'roberta' not in model_name:
+        from transformers import BertTokenizer
+        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+        from multi_label_fns import Bert_clf
+        model = Bert_clf.from_pretrained(model_name,
+                                         num_labels=NUM_LABELS,
+                                         output_attentions=False,
+                                         output_hidden_states=True)
+        print('using Bert:', model_name)
+
+    elif 'RoBerta' or 'roberta' in model_name:
+        from transformers import RobertaTokenizer
+        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
+        from multi_label_fns import RoBerta_clf
+        model = RoBerta_clf.from_pretrained(model_name,
+                                            num_labels=NUM_LABELS,
+                                            output_attentions=False,
+                                            output_hidden_states=True)
+        print('using RoBerta:', model_name)
+
+    elif 'XLM' or 'xlm' in model_name:
+        from transformers import XLMTokenizer
+        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
+        from multi_label_fns import XLM_clf
+        model = XLM_clf.from_pretrained(model_name,
+                                        num_labels=NUM_LABELS,
+                                        output_attentions=False,
+                                        output_hidden_states=True)
+        print('using XLM:', model_name)
+    else:
+        print('need to define using which model using --BertModel or --saved_lm_model')
+
+# multi-class
+elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
+    if 'Bert' or 'bert' in model_name and 'RoBerta' not in model_name and 'roberta' not in model_name:
+        from transformers import BertTokenizer, BertForSequenceClassification
+        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+        model = BertForSequenceClassification.from_pretrained(model_name,
+                                                              num_labels=NUM_LABELS,
+                                                              output_attentions=False,
+                                                              output_hidden_states=False)
+        print(' ')
+        print('using Bert:', model_name)
+
+    elif 'RoBerta' or 'roberta' in model_name:
+        from transformers import RobertaTokenizer, RobertaForSequenceClassification, RobertaConfig
+        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
+        model = RobertaForSequenceClassification.from_pretrained(model_name,
+                                                                 num_labels=NUM_LABELS,
+                                                                 output_attentions=False,
+                                                                 output_hidden_states=False)
+        print(' ')
+        print('using Roberta:', model_name)
+
+    elif 'XLM' or 'xlm' in model_name:
+        from transformers import XLMTokenizer, XLMForSequenceClassification, XLMConfig
+        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
+        model = XLMForSequenceClassification.from_pretrained(model_name,
+                                                             num_labels=NUM_LABELS,
+                                                             output_attentions=False,
+                                                             output_hidden_states=True)
+        print(' ')
+        print('using XLM:', model_name)
+    else:
+        print('defined multi-class classification but the model fails settingup')
+else:
+    print('need to define using which dataset')
+
+print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
+params = list(model.named_parameters())
+
+
+############################ Model and Tokenizer all set up
 
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 params = list(model.named_parameters())
@@ -417,7 +539,7 @@ def metrics(preds, label):
 '''
 ================== Training Loop =======================
 '''
-optimizer = AdamW(model.parameters(), lr=2e-5, eps=1e-8)
+optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
 from transformers import get_linear_schedule_with_warmup
 total_steps = len(train_dataloader) * epochs
 scheduler = get_linear_schedule_with_warmup(optimizer,
@@ -466,7 +588,11 @@ model.eval()
 
 predictions = torch.Tensor().to(device)
 
-
+def clean_dataset(df):
+    assert isinstance(df, pd.DataFrame), "df needs to be a pd.DataFrame"
+    df.dropna(inplace=True)
+    indices_to_keep = ~df.isin([np.nan, np.inf, -np.inf]).any(1)
+    return df[indices_to_keep].astype(np.float64)
 
 if args.data == 'multi-label':
     labels = torch.Tensor().to(device)
@@ -495,7 +621,7 @@ if args.data == 'multi-label':
 
     print('   TEST')
     print(test.head())
-    result = pd.concat([test, predictions_df], axis=1)
+    result = clean_dataset(pd.concat([test, predictions_df], axis=1))
 
 
     f1_toxic = f1_score(result['toxic'], result['pred_toxic'])
@@ -511,7 +637,8 @@ if args.data == 'multi-label':
     print("f1_insult:", f1_insult)
     print("f1_identity_hate:", f1_identity_hate)
     print("macro F1:", (f1_toxic + f1_severe_toxic + f1_obscene + f1_threat + f1_insult + f1_identity_hate)/6)
-    result.to_csv(str(args.resultpath) + str(args.data) + '_ft_cls_result.csv', sep='\t')
+    result.to_csv(str(args.resultpath) + model_name +str(args.data) + '_result.csv', sep='\t')
+
 else:
     for batch in prediction_dataloader:
         batch = tuple(t.to(device) for t in batch)
