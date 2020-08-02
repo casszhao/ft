@@ -162,10 +162,33 @@ lm_model = RobertaTokenizer.from_pretrained('distilroberta-base', do_lower_case=
 
 if args.data == 'multi-label':
     from multi_label_fns import Bert_clf, validate_multilable, train_multilabel
-    model = Bert_clf.from_pretrained(str(args.data)+'_train.csv_LMmodel',
-                                     num_labels=NUM_LABELS,
-                                     output_attentions=False,
-                                     output_hidden_states=True)
+    if args.BertModel == "Bert":
+        model = Bert_clf.from_pretrained(str(args.data) + '_train.csv_LMmodel',
+                                         num_labels=NUM_LABELS,
+                                         output_attentions=False,
+                                         output_hidden_states=True)
+        print('using Bert')
+    elif args.BertModel == "RoBerta":
+        print("using Roberta")
+
+    elif args.BertModel == "XLM":
+        print("using XLM")
+
+    elif args.saved_lm_model != None:
+        from transformers import BertTokenizer, BertForSequenceClassification, AdamW, BertConfig
+
+        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+        model = BertForSequenceClassification.from_pretrained(
+            str(args.saved_lm_model),
+            num_labels=NUM_LABELS,
+            output_attentions=False,
+            output_hidden_states=False)
+
+
+        saved_lm_model
+    else:
+        print('need to define using which model, format is like "Bert", "RoBerta", "XLM"')
+
 elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
     if args.BertModel == "Bert":
         from transformers import BertTokenizer, BertForSequenceClassification, AdamW, BertConfig
@@ -194,7 +217,7 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
 
         tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
         print(' ')
-        print("using XLMTokenizer")
+        print("using XLM")
 
 
     elif args.saved_lm_model != None:
@@ -514,5 +537,5 @@ else:
     print(str(args.data))
     print('f1_micro:', f1_micro, 'f1_macro:', f1_macro)
     print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
-    test.to_csv(str(resultname + '_result.csv'))
+    test.to_csv(str(resultname) + '_result.csv')
 

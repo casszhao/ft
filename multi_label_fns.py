@@ -1,3 +1,6 @@
+from transformers import BertPreTrainedModel, BertModel
+
+
 class Bert_clf(BertPreTrainedModel):
     def __init__(self, config, token='cls'):
         super().__init__(config)

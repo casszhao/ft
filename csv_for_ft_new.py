@@ -18,15 +18,14 @@ group.add_argument('--running', action='store_true', help='running using the ori
 group.add_argument('--testing', action='store_true', help='testing using the small dataset')
 
 # 2 text col name
-parser.add_argument('--textcolname', type=str)
+#parser.add_argument('--textcolname', type=str)
 
 parser.add_argument('--num_train_epochs', '-e', type=int)
 # 3
 parser.add_argument('--data', type=str, action='store', choices = ['AG10K', 'wassem', 'tweet50k', 'multi-label'])
 
-parser.add_argument('--resultpath', type=str, help='where to save the LM model')
-
 # 4
+parser.add_argument('--resultpath', type=str, help='where to save the LM model')
 args = parser.parse_args()
 
 import pandas as pd
@@ -95,7 +94,7 @@ elif args.LM == 'XLM':
     )
 
     tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
-    model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-enfr-1024' ,config=config)
+    model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-enfr-1024', config=config)
 
 else:
     print('need to define LM from Bert,RoBerta,XLM')
@@ -156,7 +155,7 @@ print('===========================')
 
 from transformers import LineByLineTextDataset, DataCollatorForLanguageModeling
 #paths = [str(x) for x in Path(str(args.txtfolder)).glob("**/*.txt")]
-file_path = str(args.data)+ '_train.csv.txt'
+file_path = str(args.data) + '_train.csv.txt'
 print('file_path: ', file_path)
 dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= file_path, block_size=128)
 print('created dataset for LineByLineTextDataset() from folders')
@@ -175,7 +174,29 @@ training_args = TrainingArguments(
     output_dir=dir,
     overwrite_output_dir=True,
     num_train_epochs= args.num_train_epochs,
-    per_device_train_batch_size=32,
+    per_device_train_batch_size=16,
+    save_steps=1_000,
+    save_total_limit=2,
+)
+
+# default learning rate(5e-5)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    data_collator=data_collator,
+    train_dataset=dataset,
+    prediction_loss_only=True,
+)
+
+'''
+training_args = TrainingArguments(
+    do_train=True,
+    do_predict=True,
+    output_dir=dir,
+    overwrite_output_dir=True,
+    num_train_epochs= args.num_train_epochs,
+    per_device_train_batch_size=16,
     save_steps=1_000,
     save_total_limit=2,
 )
@@ -187,10 +208,12 @@ trainer = Trainer(
     train_dataset=dataset,
     prediction_loss_only=True,
 )
+'''
 
 def format_time(elapsed):
     elapsed_rounded = int(round((elapsed)))
     return str(datetime.timedelta(seconds=elapsed_rounded))
+
 
 t0 = time.time()
 trainer.train()
