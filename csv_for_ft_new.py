@@ -8,7 +8,7 @@ import argparse
 import time
 import datetime
 
-parser = argparse.ArgumentParser(description='convert json to txt for later training')
+parser = argparse.ArgumentParser(description='this version use already made txt file')
 # 0
 parser.add_argument('--LM', type=str, action='store', choices = ['Bert','RoBerta','XLM'])
 
