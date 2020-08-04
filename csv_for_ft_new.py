@@ -81,7 +81,7 @@ else:
     print('need to define LM from Bert,RoBerta,XLM')
 
 
-print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
+print('The model (NO frozen paras) has:', count_parameters(model))
 print('===========================')
 
 def freeze_layer_fun(freeze_layer):
