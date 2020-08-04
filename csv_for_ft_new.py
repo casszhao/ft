@@ -80,9 +80,10 @@ elif args.LM == 'XLM':
 else:
     print('need to define LM from Bert,RoBerta,XLM')
 
-
+'''
 print('The model (NO frozen paras) has:', count_parameters(model))
 print('===========================')
+'''
 
 def freeze_layer_fun(freeze_layer):
     for name, param in model.named_parameters():
