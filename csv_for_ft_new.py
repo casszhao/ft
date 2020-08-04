@@ -81,7 +81,6 @@ else:
     print('need to define LM from Bert,RoBerta,XLM')
 
 
-print('===========================')
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 print('===========================')
 
