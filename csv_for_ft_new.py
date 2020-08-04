@@ -144,7 +144,7 @@ training_args = TrainingArguments(
     overwrite_output_dir=True,
     num_train_epochs= args.num_train_epochs,
     per_device_train_batch_size=args.batch_size,
-    save_steps=1_000,
+    save_steps=1000,
     save_total_limit=2,
 )
 
@@ -158,26 +158,6 @@ trainer = Trainer(
     prediction_loss_only=True,
 )
 
-'''
-training_args = TrainingArguments(
-    do_train=True,
-    do_predict=True,
-    output_dir=dir,
-    overwrite_output_dir=True,
-    num_train_epochs= args.num_train_epochs,
-    per_device_train_batch_size=16,
-    save_steps=1_000,
-    save_total_limit=2,
-)
-
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    data_collator=data_collator,
-    train_dataset=dataset,
-    prediction_loss_only=True,
-)
-'''
 
 def format_time(elapsed):
     elapsed_rounded = int(round((elapsed)))
