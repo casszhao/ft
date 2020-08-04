@@ -275,10 +275,10 @@ elif args.BertModel != None:
     elif args.BertModel == 'RoBerta':
         model_name = 'roberta-base'
     elif args.BertModel == 'RoBerta':
-        model_name = 'xlm-mlm-enfr-1024'
+        model_name = 'xlm-mlm-xnli15-1024'
 else:
     print('the model name is not set up, it should be from a pretrained model file(as args.saved_lm_model) or '
-          'bert-base-cased or roberta-base or xlm-mlm-enfr-1024')
+          'bert-base-cased or roberta-base or xlm-mlm-xnli15-1024')
 print(model_name)
 
 
