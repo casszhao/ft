@@ -80,11 +80,6 @@ elif args.LM == 'XLM':
 else:
     print('need to define LM from Bert,RoBerta,XLM')
 
-'''
-print('The model (NO frozen paras) has:', count_parameters(model))
-print('===========================')
-'''
-
 def freeze_layer_fun(freeze_layer):
     for name, param in model.named_parameters():
         if freeze_layer in name:
@@ -92,7 +87,6 @@ def freeze_layer_fun(freeze_layer):
             param.requires_grad = False
         else:
             pass
-
 
 '''
 freeze_layer_1 = '.1.'
@@ -130,7 +124,7 @@ freeze_layer_10 = '.10.'
 freeze_layer_fun(freeze_layer_10)
 '''
 print('===========================')
-print(f'The model now has {count_parameters(model):,} trainable parameters')
+print('The model has: ', count_parameters(model))
 print('===========================')
 
 
