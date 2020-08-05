@@ -22,14 +22,16 @@ else:
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+def format_time(elapsed):
+    elapsed_rounded = int(round((elapsed)))
+    return str(datetime.timedelta(seconds=elapsed_rounded))
 
 parser = argparse.ArgumentParser(description='run fine-tuned model on multi-label dataset')
-# parser.add_argument('trainable', type=str, action='store', choices = ['fix','nofix'])
 # 0
 parser.add_argument('data', type=str, choices=['multi-label', 'wassem', 'AG10K', 'tweet50k'])
+# 1
 parser.add_argument('--saved_lm_model', type=str, help= 'where is the saved trained language model, including path and name')
 parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA'])
-
 # 2
 parser.add_argument('-e', '--epochs', type=int, default=10, metavar='', help='how many epochs')
 # 3
@@ -57,11 +59,6 @@ else:
 
 batch_size = 16
 epochs = args.epochs
-
-
-def format_time(elapsed):
-    elapsed_rounded = int(round((elapsed)))
-    return str(datetime.timedelta(seconds=elapsed_rounded))
 
 
 train_path = str(args.data) + '_train.csv'
@@ -274,12 +271,12 @@ elif args.BertModel != None:
         model_name = 'bert-base-cased'
     elif args.BertModel == 'RoBerta':
         model_name = 'roberta-base'
-    elif args.BertModel == 'RoBerta':
+    elif args.BertModel == 'XLM':
         model_name = 'xlm-mlm-xnli15-1024'
 else:
     print('the model name is not set up, it should be from a pretrained model file(as args.saved_lm_model) or '
           'bert-base-cased or roberta-base or xlm-mlm-xnli15-1024')
-print(model_name)
+print('model_name: ', model_name)
 
 
 if args.data == 'multi-label':
@@ -293,6 +290,8 @@ if args.data == 'multi-label':
                                          output_attentions=False,
                                          output_hidden_states=True)
         print('using Bert:', model_name)
+        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
+        print(model)
 
     elif 'RoBerta' or 'roberta' in model_name:
         from transformers import RobertaTokenizer
@@ -303,6 +302,8 @@ if args.data == 'multi-label':
                                             output_attentions=False,
                                             output_hidden_states=True)
         print('using RoBerta:', model_name)
+        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
+        print(model)
 
     elif 'XLM' or 'xlm' in model_name:
         from transformers import XLMTokenizer
@@ -313,6 +314,9 @@ if args.data == 'multi-label':
                                         output_attentions=False,
                                         output_hidden_states=True)
         print('using XLM:', model_name)
+        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
+        print(model)
+
     else:
         print('need to define using which model using --BertModel or --saved_lm_model')
 
@@ -325,8 +329,9 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
                                                               num_labels=NUM_LABELS,
                                                               output_attentions=False,
                                                               output_hidden_states=False)
-        print(' ')
         print('using Bert:', model_name)
+        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
+        print(model)
 
     elif 'RoBerta' or 'roberta' in model_name:
         from transformers import RobertaTokenizer, RobertaForSequenceClassification, RobertaConfig
@@ -340,7 +345,7 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
 
     elif 'XLM' or 'xlm' in model_name:
         from transformers import XLMTokenizer, XLMForSequenceClassification, XLMConfig
-        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
+        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-xnli15-1024', do_lower_case=True)
         model = XLMForSequenceClassification.from_pretrained(model_name,
                                                              num_labels=NUM_LABELS,
                                                              output_attentions=False,
@@ -353,12 +358,9 @@ else:
     print('need to define using which dataset')
 
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
-params = list(model.named_parameters())
 
 
 ############################ Model and Tokenizer all set up
-
-print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 params = list(model.named_parameters())
 
 if args.fix:
@@ -397,8 +399,6 @@ for sent in sentences_train:
                                          return_tensors='pt')  # return pytorch not tensorflow tensor
     train_inputs = torch.cat((train_inputs, encoded_sent['input_ids'].float()), dim=0)
     train_masks = torch.cat((train_masks, encoded_sent['attention_mask'].float()), dim=0)
-
-
 train_inputs.to(device)
 train_masks.to(device)
 
@@ -415,7 +415,6 @@ for sent in sentences_validation:
                                          return_tensors='pt')  # return pytorch not tensorflow tensor
     validation_inputs = torch.cat((validation_inputs, encoded_sent['input_ids'].float()), dim=0)
     validation_masks = torch.cat((validation_masks, encoded_sent['attention_mask'].float()), dim=0)
-
 validation_inputs.to(device)
 validation_masks.to(device)
 
@@ -491,7 +490,7 @@ def train(model, dataloader):
 
 
 def validate(model, dataloader):
-    print(" === Validation ===")
+    print(" === Validate function for multi-class ===")
     model.eval()
     valid_loss, f1_micro_total = 0, 0
 
@@ -594,6 +593,7 @@ def clean_dataset(df):
     indices_to_keep = ~df.isin([np.nan, np.inf, -np.inf]).any(1)
     return df[indices_to_keep].astype(np.float64)
 
+
 if args.data == 'multi-label':
     labels = torch.Tensor().to(device)
     for batch in prediction_dataloader:
@@ -619,8 +619,6 @@ if args.data == 'multi-label':
     predictions_df = pd.DataFrame(predictions_np,
                                   columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
 
-    print('   TEST')
-    print(test.head())
     result = clean_dataset(pd.concat([test, predictions_df], axis=1))
 
 
