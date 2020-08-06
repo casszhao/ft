@@ -94,12 +94,12 @@ print('The model has: ', count_parameters(model))
 print('===========================')
 
 if args.testing:
-    file_path = 'xaa.txt'
+    file_path = 'AG10K_train.csv.txt'
 else:
     file_path = str(args.data) + '_train.csv.txt'
 print('file_path: ', file_path)
 
-dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= str(file_path), block_size=128)
+dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= file_path, block_size=128)
 #dataset = load_dataset("./csv_for_ft_new.py", data_files=file_path)
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
 
