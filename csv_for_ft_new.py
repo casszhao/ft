@@ -128,7 +128,7 @@ print('The model has: ', count_parameters(model))
 print('===========================')
 
 if args.testing:
-    file_path = 'xaa'
+    file_path = 'xaa.txt'
 else:
     file_path = str(args.data) + '_train.csv.txt'
 print('file_path: ', file_path)
