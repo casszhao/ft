@@ -88,41 +88,7 @@ def freeze_layer_fun(freeze_layer):
         else:
             pass
 
-'''
-freeze_layer_1 = '.1.'
-freeze_layer_fun(freeze_layer_1)
 
-freeze_layer_2 = '.2.'
-print(variable.grad)
-
-print(variable.data)
-print(variable.data.numpy())
-freeze_layer_fun(freeze_layer_2)
-
-freeze_layer_3 = '.3.'
-freeze_layer_fun(freeze_layer_3)
-
-freeze_layer_4 = '.4.'
-freeze_layer_fun(freeze_layer_4)
-
-freeze_layer_5 = '.5.'
-freeze_layer_fun(freeze_layer_5)
-
-freeze_layer_6 = '.6.'
-freeze_layer_fun(freeze_layer_6)
-
-freeze_layer_7 = '.7.'
-freeze_layer_fun(freeze_layer_7)
-
-freeze_layer_8 = '.8.'
-freeze_layer_fun(freeze_layer_8)
-
-freeze_layer_9 = '.9.'
-freeze_layer_fun(freeze_layer_9)
-
-freeze_layer_10 = '.10.'
-freeze_layer_fun(freeze_layer_10)
-'''
 print('===========================')
 print('The model has: ', count_parameters(model))
 print('===========================')
@@ -132,7 +98,8 @@ if args.testing:
 else:
     file_path = str(args.data) + '_train.csv.txt'
 print('file_path: ', file_path)
-dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= file_path, block_size=128)
+
+dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= str(file_path), block_size=128)
 #dataset = load_dataset("./csv_for_ft_new.py", data_files=file_path)
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
 
