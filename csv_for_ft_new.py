@@ -128,10 +128,12 @@ print('The model has: ', count_parameters(model))
 print('===========================')
 
 
+from nlp import load_dataset
 
 file_path = str(args.data) + '_train.csv.txt'
 print('file_path: ', file_path)
 dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= file_path, block_size=128)
+#dataset = load_dataset("./csv_for_ft_new.py", data_files=file_path)
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
 
 

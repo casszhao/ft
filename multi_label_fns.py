@@ -10,6 +10,10 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 import argparse
 import datetime
 
+def format_time(elapsed):
+    elapsed_rounded = int(round((elapsed)))
+    return str(datetime.timedelta(seconds=elapsed_rounded))
+
 if torch.cuda.is_available():
     device = torch.device("cuda")
     print('There are %d GPU(s) available.' % torch.cuda.device_count())
