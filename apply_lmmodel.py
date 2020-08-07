@@ -322,18 +322,8 @@ if args.data == 'multi-label':
 
 # multi-class
 elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
-    if 'Bert' or 'bert' in model_name and 'RoBerta' not in model_name and 'roberta' not in model_name:
-        from transformers import BertTokenizer, BertForSequenceClassification
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        model = BertForSequenceClassification.from_pretrained(model_name,
-                                                              num_labels=NUM_LABELS,
-                                                              output_attentions=False,
-                                                              output_hidden_states=False)
-        print('using Bert:', model_name)
-        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-        print(model)
 
-    elif 'RoBerta' or 'roberta' in model_name:
+    if 'RoBerta' or 'roberta' in model_name:
         from transformers import RobertaTokenizer, RobertaForSequenceClassification, RobertaConfig
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
         model = RobertaForSequenceClassification.from_pretrained(model_name,
@@ -342,6 +332,18 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
                                                                  output_hidden_states=False)
         print(' ')
         print('using Roberta:', model_name)
+
+    elif 'Bert' or 'bert' in model_name:
+        from transformers import BertTokenizer, BertForSequenceClassification
+        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+        model = BertForSequenceClassification.from_pretrained(model_name,
+                                                              num_labels=NUM_LABELS,
+                                                              output_attentions=False,
+                                                              output_hidden_states=False)
+        print(' ')
+        print('using Bert:', model_name)
+        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
+        print(model)
 
     elif 'XLM' or 'xlm' in model_name:
         from transformers import XLMTokenizer, XLMForSequenceClassification, XLMConfig
