@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='this version use already made txt 
 # 0
 parser.add_argument('--LM', type=str, action='store', choices = ['Bert','RoBerta','XLM'])
 
-# 1 pre_tokenizer no need
+# 1
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--running', action='store_true', help='running using the original big dataset')
 group.add_argument('--testing', action='store_true', help='testing using the small dataset')
@@ -39,38 +39,39 @@ def count_parameters(model):
 
 if args.LM == 'Bert':
     from transformers import BertTokenizerFast, BertConfig, BertForMaskedLM
+
     config = BertConfig(vocab_size=28996,
                         max_position_embeddings=512,
                         num_attention_heads=12,
                         num_hidden_layers=12,
-                        type_vocab_size=2,
+                        #type_vocab_size=2, default is 2
                         )
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased', do_lower_case=False)
     model = BertForMaskedLM.from_pretrained('bert-base-cased', config=config)
-    #12-layer, 768-hidden, 12-heads, 110M parameters.
+    # 12-layer, 768-hidden, 12-heads, 110M parameters.
 
 elif args.LM == 'RoBerta':
     from transformers import RobertaConfig, RobertaTokenizerFast, RobertaForMaskedLM
-    config = RobertaConfig(
-        vocab_size=50265,
-        max_position_embeddings=514,
-        num_attention_heads=12,
-        num_hidden_layers=12,
-        type_vocab_size=1,
-    )
+
+    config = RobertaConfig(vocab_size=50265,
+                           max_position_embeddings=514,
+                           num_attention_heads=12,
+                           num_hidden_layers=12,
+                           #type_vocab_size=2,
+                           )
     tokenizer = RobertaTokenizerFast.from_pretrained('roberta-base', do_lower_case=False)
-    model = RobertaForMaskedLM.from_pretrained('roberta-base' ,config=config)
+    model = RobertaForMaskedLM.from_pretrained('roberta-base', config=config)
     # 12-layer, 768-hidden, 12-heads, 125M parameters, roberta-base using the bert-base architecture
 
 elif args.LM == 'XLM':
     from transformers import XLMConfig, XLMTokenizer, XLMWithLMHeadModel
-    config = XLMConfig(
-        vocab_size=95000,
-        emb_dim = 1024,
-        max_position_embeddings=512,
-        n_heads = 16,
-        n_layers = 12,
-    )
+
+    config = XLMConfig(vocab_size=95000,
+                       emb_dim=1024,
+                       max_position_embeddings=512,
+                       n_heads=16,
+                       n_layers=12,
+                       )
 
     tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-xnli15-1024', do_lower_case=False)
     model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-xnli15-1024', config=config)
@@ -79,6 +80,8 @@ elif args.LM == 'XLM':
 
 else:
     print('need to define LM from Bert,RoBerta,XLM')
+
+print(model)
 
 def freeze_layer_fun(freeze_layer):
     for name, param in model.named_parameters():
@@ -94,7 +97,7 @@ print('The model has: ', count_parameters(model))
 print('===========================')
 
 if args.testing:
-    file_path = 'AG10K_train.csv.txt'
+    file_path = 'xaa.txt'
 else:
     file_path = str(args.data) + '_train.csv.txt'
 print('file_path: ', file_path)
