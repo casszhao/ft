@@ -57,7 +57,7 @@ elif args.LM == 'RoBerta':
                            max_position_embeddings=514,
                            num_attention_heads=12,
                            num_hidden_layers=12,
-                           #type_vocab_size=2,
+                           type_vocab_size=1,
                            )
     tokenizer = RobertaTokenizerFast.from_pretrained('roberta-base', do_lower_case=False)
     model = RobertaForMaskedLM.from_pretrained('roberta-base', config=config)
