@@ -281,19 +281,8 @@ print('model_name: ', model_name)
 
 if args.data == 'multi-label':
     from multi_label_fns import validate_multilable, train_multilabel
-    if 'Bert' or 'bert' in model_name and 'RoBerta' not in model_name and 'roberta' not in model_name:
-        from transformers import BertTokenizer
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        from multi_label_fns import Bert_clf
-        model = Bert_clf.from_pretrained(model_name,
-                                         num_labels=NUM_LABELS,
-                                         output_attentions=False,
-                                         output_hidden_states=True)
-        print('using Bert:', model_name)
-        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-        print(model)
 
-    elif 'RoBerta' or 'roberta' in model_name:
+    if 'RoBerta' or 'roberta' in model_name:
         from transformers import RobertaTokenizer
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
         from multi_label_fns import RoBerta_clf
@@ -302,6 +291,18 @@ if args.data == 'multi-label':
                                             output_attentions=False,
                                             output_hidden_states=True)
         print('using RoBerta:', model_name)
+        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
+        print(model)
+
+    elif 'Bert' or 'bert' in model_name:
+        from transformers import BertTokenizer
+        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+        from multi_label_fns import Bert_clf
+        model = Bert_clf.from_pretrained(model_name,
+                                         num_labels=NUM_LABELS,
+                                         output_attentions=False,
+                                         output_hidden_states=True)
+        print('using Bert:', model_name)
         print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
         print(model)
 
@@ -318,7 +319,7 @@ if args.data == 'multi-label':
         print(model)
 
     else:
-        print('need to define using which model using --BertModel or --saved_lm_model')
+        print('using multi-label data but need to define using which model using --BertModel or --saved_lm_model')
 
 # multi-class
 elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
@@ -342,7 +343,6 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
                                                               output_hidden_states=False)
         print(' ')
         print('using Bert:', model_name)
-        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
         print(model)
 
     elif 'XLM' or 'xlm' in model_name:
