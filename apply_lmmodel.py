@@ -362,7 +362,7 @@ else:
 
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 
-stop
+
 ############################ Model and Tokenizer all set up
 params = list(model.named_parameters())
 
