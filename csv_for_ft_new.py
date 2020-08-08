@@ -65,7 +65,7 @@ elif args.LM == 'RoBerta':
 
 elif args.LM == 'XLM':
     from transformers import XLMConfig, XLMTokenizer, XLMWithLMHeadModel
-
+    '''
     config = XLMConfig(vocab_size=95000,
                        emb_dim=1024,
                        max_position_embeddings=512,
@@ -77,6 +77,18 @@ elif args.LM == 'XLM':
     model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-xnli15-1024', config=config)
     # 12-layer, 1024-hidden, 8-heads
     # XLM Model pre-trained with MLM on the 15 XNLI languages.
+    '''
+    config = XLMConfig(vocab_size=64139,
+                       emb_dim=1024,
+                       max_position_embeddings=512,
+                       n_heads=8,
+                       n_layers=6,
+                       )
+
+    tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
+    model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-enfr-1024', config=config)
+    #6-layer, 1024-hidden, 8-heads
+    # XLM English-French model trained on the concatenation of English and French wikipedia
 
 else:
     print('need to define LM from Bert,RoBerta,XLM')
