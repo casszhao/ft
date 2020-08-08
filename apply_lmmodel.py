@@ -282,7 +282,7 @@ print('model_name: ', model_name)
 if args.data == 'multi-label':
     from multi_label_fns import validate_multilable, train_multilabel
 
-    if 'RoBerta' in model_name or 'roberta' in model_name:
+    if (('RoBerta' in model_name) or ('roberta' in model_name)):
         from transformers import RobertaTokenizer, RobertaModel
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
         from multi_label_fns import RoBerta_clf
@@ -294,7 +294,7 @@ if args.data == 'multi-label':
         print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
         print(model)
 
-    elif 'Bert' in model_name or 'bert' in model_name:
+    elif (('Bert' in model_name) or ('bert' in model_name)):
         from transformers import BertTokenizer
         tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
         from multi_label_fns import Bert_clf
@@ -306,7 +306,7 @@ if args.data == 'multi-label':
         print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
         print(model)
 
-    elif 'XLM' in model_name or 'xlm' in model_name:
+    elif (('XLM' in model_name) or ('xlm' in model_name)):
         from transformers import XLMTokenizer
         tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
         from multi_label_fns import XLM_clf
@@ -322,10 +322,10 @@ if args.data == 'multi-label':
         print('using multi-label data but need to define using which model using --BertModel or --saved_lm_model')
 
 # multi-class
-elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
+elif (args.data == 'wassem' or 'AG10K' or 'tweet50k'):
     print('multi-class classification')
 
-    if 'RoBerta' in model_name or 'roberta' in model_name:
+    if (('RoBerta' in model_name) or ('roberta' in model_name)):
         from transformers import RobertaTokenizer, RobertaForSequenceClassification, RobertaConfig
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
         model = RobertaForSequenceClassification.from_pretrained(model_name,
@@ -335,7 +335,7 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
         print(' ')
         print('using Roberta:', model_name)
 
-    elif 'Bert' in model_name or 'bert' in model_name:
+    elif (('Bert' in model_name) or ('bert' in model_name)):
         from transformers import BertTokenizer, BertForSequenceClassification
         tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
         model = BertForSequenceClassification.from_pretrained(model_name,
@@ -346,7 +346,7 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
         print('using Bert:', model_name)
         print(model)
 
-    elif 'XLM' in model_name or 'xlm' in model_name:
+    elif (('XLM' in model_name) or ('xlm' in model_name)):
         from transformers import XLMTokenizer, XLMForSequenceClassification, XLMConfig
         tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
         model = XLMForSequenceClassification.from_pretrained(model_name,
@@ -465,6 +465,7 @@ def train(model, dataloader):
         b_input_ids = batch[0].long().to(device)
         b_input_mask = batch[1].long().to(device)
         b_labels = batch[2].long().to(device)
+        print(b_labels)
 
         optimizer.zero_grad()
 
@@ -472,6 +473,8 @@ def train(model, dataloader):
                             token_type_ids=None,
                             attention_mask=b_input_mask,
                             labels=b_labels,
+                            output_attentions = False,
+                            output_hidden_states=False,
                             )
 
         total_loss += loss.item()

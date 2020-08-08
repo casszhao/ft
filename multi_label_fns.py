@@ -1,5 +1,6 @@
 from transformers import BertPreTrainedModel, BertModel, BertConfig, RobertaConfig, XLMConfig, XLMModel, XLMPreTrainedModel, RobertaModel
 import torch.nn as nn
+import torch.nn.functional as F
 import torch
 
 import time
