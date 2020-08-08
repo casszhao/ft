@@ -465,7 +465,6 @@ def train(model, dataloader):
         b_input_ids = batch[0].long().to(device)
         b_input_mask = batch[1].long().to(device)
         b_labels = batch[2].long().to(device)
-        print(b_labels)
 
         optimizer.zero_grad()
 
