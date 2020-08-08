@@ -352,7 +352,8 @@ elif (args.data == 'wassem' or 'AG10K' or 'tweet50k'):
         model = XLMForSequenceClassification.from_pretrained(model_name,
                                                              num_labels=NUM_LABELS,
                                                              output_attentions=False,
-                                                             output_hidden_states=True)
+                                                             output_hidden_states=False,
+                                                             )
         print(' ')
         print('using XLM:', model_name)
     else:
