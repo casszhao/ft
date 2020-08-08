@@ -272,10 +272,10 @@ elif args.BertModel != None:
     elif args.BertModel == 'RoBerta':
         model_name = 'roberta-base'
     elif args.BertModel == 'XLM':
-        model_name = 'xlm-mlm-xnli15-1024'
+        model_name = 'xlm-mlm-enfr-1024'
 else:
     print('the model name is not set up, it should be from a pretrained model file(as args.saved_lm_model) or '
-          'bert-base-cased or roberta-base or xlm-mlm-xnli15-1024')
+          'bert-base-cased or roberta-base or xlm-mlm-enfr-1024')
 print('model_name: ', model_name)
 
 
@@ -347,7 +347,7 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
 
     elif 'XLM' or 'xlm' in model_name:
         from transformers import XLMTokenizer, XLMForSequenceClassification, XLMConfig
-        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-xnli15-1024', do_lower_case=True)
+        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
         model = XLMForSequenceClassification.from_pretrained(model_name,
                                                              num_labels=NUM_LABELS,
                                                              output_attentions=False,
