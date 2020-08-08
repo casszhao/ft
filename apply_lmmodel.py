@@ -282,8 +282,8 @@ print('model_name: ', model_name)
 if args.data == 'multi-label':
     from multi_label_fns import validate_multilable, train_multilabel
 
-    if 'RoBerta' or 'roberta' in model_name:
-        from transformers import RobertaTokenizer
+    if 'RoBerta' in model_name or 'roberta' in model_name:
+        from transformers import RobertaTokenizer, RobertaModel
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
         from multi_label_fns import RoBerta_clf
         model = RoBerta_clf.from_pretrained(model_name,
@@ -294,7 +294,7 @@ if args.data == 'multi-label':
         print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
         print(model)
 
-    elif 'Bert' or 'bert' in model_name:
+    elif 'Bert' in model_name or 'bert' in model_name:
         from transformers import BertTokenizer
         tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
         from multi_label_fns import Bert_clf
@@ -306,7 +306,7 @@ if args.data == 'multi-label':
         print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
         print(model)
 
-    elif 'XLM' or 'xlm' in model_name:
+    elif 'XLM' in model_name or 'xlm' in model_name:
         from transformers import XLMTokenizer
         tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
         from multi_label_fns import XLM_clf
@@ -323,8 +323,9 @@ if args.data == 'multi-label':
 
 # multi-class
 elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
+    print('multi-class classification')
 
-    if 'RoBerta' or 'roberta' in model_name:
+    if 'RoBerta' in model_name or 'roberta' in model_name:
         from transformers import RobertaTokenizer, RobertaForSequenceClassification, RobertaConfig
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
         model = RobertaForSequenceClassification.from_pretrained(model_name,
@@ -334,7 +335,7 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
         print(' ')
         print('using Roberta:', model_name)
 
-    elif 'Bert' or 'bert' in model_name:
+    elif 'Bert' in model_name or 'bert' in model_name:
         from transformers import BertTokenizer, BertForSequenceClassification
         tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
         model = BertForSequenceClassification.from_pretrained(model_name,
@@ -345,7 +346,7 @@ elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
         print('using Bert:', model_name)
         print(model)
 
-    elif 'XLM' or 'xlm' in model_name:
+    elif 'XLM' in model_name or 'xlm' in model_name:
         from transformers import XLMTokenizer, XLMForSequenceClassification, XLMConfig
         tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
         model = XLMForSequenceClassification.from_pretrained(model_name,
@@ -361,7 +362,7 @@ else:
 
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 
-
+stop
 ############################ Model and Tokenizer all set up
 params = list(model.named_parameters())
 
