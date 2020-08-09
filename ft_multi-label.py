@@ -34,9 +34,9 @@ else:
     device = torch.device("cpu")
 
 
-train = pd.read_csv('multi-label_testing_test.csv')
-test = pd.read_csv('multi-label_testing_test.csv')
-validation = pd.read_csv('multi-label_testing_test.csv')
+train = pd.read_csv('multi-label_train.csv')
+test = pd.read_csv('multi-label_test.csv')
+validation = pd.read_csv('multi-label_validation.csv')
 
 sentences_train = train.comment_text.values
 sentences_test = test.comment_text.values
