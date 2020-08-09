@@ -7,12 +7,14 @@ including:
 import torch
 
 import argparse
+from transformers import AdamW
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 
 
 parser = argparse.ArgumentParser(description='convert json to txt for later training')
 parser.add_argument('--num_train_epochs', '-e', type=int)
 parser.add_argument('--LM', type=str, action='store', choices = ['Bert','RoBerta','XLM'])
+parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
 
 import pandas as pd
@@ -20,7 +22,7 @@ import regex as re
 
 MAX_LEN = 100
 batch_size = 16
-epochs = 1
+epochs = args.num_train_epochs
 
 
 if torch.cuda.is_available():
@@ -32,7 +34,7 @@ else:
     device = torch.device("cpu")
 
 
-train = pd.read_csv('multi-label_testing_train.csv')
+train = pd.read_csv('multi-label_testing_test.csv')
 test = pd.read_csv('multi-label_testing_test.csv')
 validation = pd.read_csv('multi-label_testing_test.csv')
 
@@ -192,8 +194,9 @@ for epoch_i in range(0, epochs):
         loss.backward()
         optimizer.step()
 
+model.save_pretrained(str(args.resultpath) + 'multi-label_' + str(args.LM) + '_e' + str(args.num_train_epochs))
 
-torch.save(model.state_dict(), str(args.resultpath) + str(args.BertModel) + '_multi-label.pt')
+#torch.save(model.state_dict(), str(args.resultpath) + str(args.BertModel) + '_multi-label.pt')
 
 print("")
 print("Training complete!")

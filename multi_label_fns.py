@@ -233,8 +233,6 @@ def validate_multilable(model, dataloader):
         prediction = rounded_preds.detach().cpu().numpy()
 
         labels = b_labels.to('cpu').numpy()
-        print(labels)
-        print(prediction)
         f1_micro = f1_score(labels, prediction, average='micro', zero_division=1)
         f1_micro_total += f1_micro
 
