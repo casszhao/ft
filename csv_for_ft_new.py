@@ -9,6 +9,14 @@ import time
 import datetime
 from transformers import LineByLineTextDataset, DataCollatorForLanguageModeling, Trainer, TrainingArguments
 
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+    print('There are %d GPU(s) available.' % torch.cuda.device_count())
+    print('We will use the GPU:', torch.cuda.get_device_name(0))
+else:
+    print('No GPU available, using the CPU instead.')
+    device = torch.device("cpu")
+
 
 parser = argparse.ArgumentParser(description='this version use already made txt file')
 # 0
@@ -65,19 +73,7 @@ elif args.LM == 'RoBerta':
 
 elif args.LM == 'XLM':
     from transformers import XLMConfig, XLMTokenizer, XLMWithLMHeadModel
-    '''
-    config = XLMConfig(vocab_size=95000,
-                       emb_dim=1024,
-                       max_position_embeddings=512,
-                       n_heads=16,
-                       n_layers=12,
-                       )
 
-    tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-xnli15-1024', do_lower_case=False)
-    model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-xnli15-1024', config=config)
-    # 12-layer, 1024-hidden, 8-heads
-    # XLM Model pre-trained with MLM on the 15 XNLI languages.
-    '''
     config = XLMConfig(vocab_size=64139,
                        emb_dim=1024,
                        max_position_embeddings=512,
@@ -87,7 +83,7 @@ elif args.LM == 'XLM':
 
     tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
     model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-enfr-1024', config=config)
-    #6-layer, 1024-hidden, 8-heads
+    # 6-layer, 1024-hidden, 8-heads
     # XLM English-French model trained on the concatenation of English and French wikipedia
 
 else:

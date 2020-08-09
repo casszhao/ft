@@ -253,10 +253,9 @@ def train_multilabel(model, dataloader):
 
         if step % 2000 == 0 and not step == 0:
             # Calculate elapsed time in minutes.
-            elapsed = format_time(time.time() - t0)
 
             # Report progress.
-            print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(dataloader), elapsed))
+            print('  Batch {:>5,}  of  {:>5,}.'.format(step, len(dataloader)))
 
         b_input_ids = batch[0].long().to(device)
         b_input_mask = batch[1].long().to(device)
