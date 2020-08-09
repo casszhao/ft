@@ -11,15 +11,8 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 
 
 parser = argparse.ArgumentParser(description='convert json to txt for later training')
-# 0
-
 parser.add_argument('--num_train_epochs', '-e', type=int)
-
-# 1 pre_tokenizer no need
-group2 = parser.add_mutually_exclusive_group()
-group2.add_argument('--running', action='store_true', help='running using the original big dataset')
-group2.add_argument('--testing', action='store_true', help='testing using the small sample.txt dataset')
-
+parser.add_argument('--LM', type=str, action='store', choices = ['Bert','RoBerta','XLM'])
 args = parser.parse_args()
 
 import pandas as pd
@@ -47,11 +40,67 @@ sentences_train = train.comment_text.values
 sentences_test = test.comment_text.values
 sentences_validation = validation.comment_text.values
 
+if args.LM == 'Bert':
+    from transformers import BertTokenizerFast, BertConfig, BertForMaskedLM
 
+    config = BertConfig(vocab_size=28996,
+                        max_position_embeddings=512,
+                        num_attention_heads=12,
+                        num_hidden_layers=12,
+                        #type_vocab_size=2, default is 2
+                        )
+    tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased', do_lower_case=False)
+    model = BertForMaskedLM.from_pretrained('bert-base-cased', config=config)
+    # 12-layer, 768-hidden, 12-heads, 110M parameters.
+
+elif args.LM == 'RoBerta':
+    from transformers import RobertaConfig, RobertaTokenizerFast, RobertaForMaskedLM
+
+    config = RobertaConfig(vocab_size=50265,
+                           max_position_embeddings=514,
+                           num_attention_heads=12,
+                           num_hidden_layers=12,
+                           type_vocab_size=1,
+                           )
+    tokenizer = RobertaTokenizerFast.from_pretrained('roberta-base', do_lower_case=False)
+    model = RobertaForMaskedLM.from_pretrained('roberta-base', config=config)
+    # 12-layer, 768-hidden, 12-heads, 125M parameters, roberta-base using the bert-base architecture
+
+elif args.LM == 'XLM':
+    from transformers import XLMConfig, XLMTokenizer, XLMWithLMHeadModel
+    '''
+    config = XLMConfig(vocab_size=95000,
+                       emb_dim=1024,
+                       max_position_embeddings=512,
+                       n_heads=16,
+                       n_layers=12,
+                       )
+    tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-xnli15-1024', do_lower_case=False)
+    model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-xnli15-1024', config=config)
+    # 12-layer, 1024-hidden, 8-heads
+    # XLM Model pre-trained with MLM on the 15 XNLI languages.
+    '''
+    config = XLMConfig(vocab_size=64139,
+                       emb_dim=1024,
+                       max_position_embeddings=512,
+                       n_heads=8,
+                       n_layers=6,
+                       )
+
+    tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
+    model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-enfr-1024', config=config)
+    #6-layer, 1024-hidden, 8-heads
+    # XLM English-French model trained on the concatenation of English and French wikipedia
+
+else:
+    print('need to define LM from Bert,RoBerta,XLM')
+
+
+'''
 from transformers import BertTokenizerFast, BertConfig, BertForMaskedLM, AdamW
 
 tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased', do_lower_case=False)
-
+'''
 
 train_inputs = torch.Tensor()
 train_masks = torch.Tensor()
@@ -116,42 +165,32 @@ validation_sampler = SequentialSampler(validation_data)
 validation_dataloader = DataLoader(validation_data, sampler=validation_sampler, batch_size=batch_size)
 
 
-
+'''
 config = BertConfig(vocab_size=28996,
                     max_position_embeddings=512,
                     num_attention_heads=12,
                     num_hidden_layers=12,
                     type_vocab_size=2,
                     )
-
-
 model = BertForMaskedLM.from_pretrained('bert-base-cased', config=config)
+'''
 
-
-from multi_label_fns import validate_multilable, train_multilabel
 optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
 
 for epoch_i in range(0, epochs):
     for step, batch in enumerate(train_dataloader):
-        if step % 2000 == 0 and not step == 0:
-            # Report progress.
-            print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
+        b_input_ids = batch[0].long().to(device)
+        b_input_mask = batch[1].long().to(device)
 
-        else:
+        optimizer.zero_grad()
+        loss = model(b_input_ids,
+                     token_type_ids=None,
+                     attention_mask=b_input_mask,
+                     labels=b_input_ids,
+                     )[0]
 
-            b_input_ids = batch[0].long().to(device)
-            b_input_mask = batch[1].long().to(device)
-
-            optimizer.zero_grad()
-
-            loss = model(b_input_ids,
-                                token_type_ids=None,
-                                attention_mask=b_input_mask,
-                                labels=b_input_ids,
-                                )[0]
-
-            loss.backward()
-            optimizer.step()
+        loss.backward()
+        optimizer.step()
 
 
 torch.save(model.state_dict(), str(args.resultpath) + str(args.BertModel) + '_multi-label.pt')
