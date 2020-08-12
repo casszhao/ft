@@ -531,8 +531,8 @@ def metrics(preds, label):
     label (batch size, 6)
     """
     rounded_preds = torch.round(torch.sigmoid(preds))  # (batch size, 6)
-    pred_array = rounded_preds.cpu().detach().numpy()
-    label_array = label.cpu().detach().numpy()
+    pred_array = rounded_preds.detach().numpy()
+    label_array = label.detach().numpy()
 
     correct = (rounded_preds == label).float()  # convert into float for division
     acc = correct.sum() / len(correct)
@@ -620,6 +620,7 @@ if args.data == 'multi-label':
     print(' prediction    DONE.')
 
     acc, f1_micro, f1_macro = metrics(predictions, labels)
+
     print("acc is {}, micro is {}, macro is {}".format(acc, f1_micro, f1_macro))
     predictions_np = predictions.cpu().numpy()
     predictions_df = pd.DataFrame(predictions_np,
@@ -628,12 +629,12 @@ if args.data == 'multi-label':
     result = clean_dataset(pd.concat([test, predictions_df], axis=1))
 
 
-    f1_toxic = f1_score(result['toxic'], result['pred_toxic'])
-    f1_severe_toxic = f1_score(result['severe_toxic'], result['pred_severe_toxic'])
-    f1_obscene = f1_score(result['obscene'], result['pred_obscene'])
-    f1_threat = f1_score(result['threat'], result['pred_threat'])
-    f1_insult = f1_score(result['insult'], result['pred_insult'])
-    f1_identity_hate = f1_score(result['identity_hate'], result['pred_identity_hate'])
+    f1_toxic = f1_score(result['toxic'], result['pred_toxic'], zero_division =1 )
+    f1_severe_toxic = f1_score(result['severe_toxic'], result['pred_severe_toxic'], zero_division =1)
+    f1_obscene = f1_score(result['obscene'], result['pred_obscene'], zero_division =1)
+    f1_threat = f1_score(result['threat'], result['pred_threat'], zero_division =1)
+    f1_insult = f1_score(result['insult'], result['pred_insult'], zero_division =1)
+    f1_identity_hate = f1_score(result['identity_hate'], result['pred_identity_hate'], zero_division =1)
     print("f1_toxic:", f1_toxic)
     print("f1_severe_toxic:", f1_severe_toxic)
     print("f1_threat:", f1_threat)
