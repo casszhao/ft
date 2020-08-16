@@ -153,116 +153,7 @@ else:
     test_labels = torch.tensor(labels_test).to(device)
     validation_labels = torch.tensor(labels_validation).to(device)
 
-'''
-from transformers import RobertaTokenizer
-lm_model = RobertaTokenizer.from_pretrained('distilroberta-base', do_lower_case=False)
-'''
 
-
-#######################     SET UP TOKENIZER AND MODEL
-'''
-if args.data == 'multi-label':
-    from multi_label_fns import validate_multilable, train_multilabel
-    if args.BertModel == "Bert":
-        from multi_label_fns import Bert_clf
-        from transformers import BertTokenizer
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        model = Bert_clf.from_pretrained(str(args.saved_lm_model),
-                                         num_labels=NUM_LABELS,
-                                         output_attentions=False,
-                                         output_hidden_states=True)
-        print('using Bert')
-
-    elif args.BertModel == "RoBerta":
-        from multi_label_fns import RoBerta_clf
-        from transformers import RobertaTokenizer
-        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
-        model = RoBerta_clf.from_pretrained(str(args.saved_lm_model),
-                                            num_labels=NUM_LABELS,
-                                            output_attentions=False,
-                                            output_hidden_states=True)
-        print("using Roberta")
-
-    elif args.BertModel == "XLM":
-        from multi_label_fns import XLM_clf
-        from transformers import XLMTokenizer
-        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024')
-        from bert_models import XLM_clf
-
-        model = XLM_clf.from_pretrained('xlm-mlm-enfr-1024',
-                                        num_labels=NUM_LABELS,
-                                        output_attentions=False,
-                                        output_hidden_states=True)
-        print("using XLM")
-
-    elif args.saved_lm_model != None:
-        from transformers import BertForSequenceClassification, AdamW, BertConfig
-
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        model = BertForSequenceClassification.from_pretrained(
-            str(args.saved_lm_model),
-            num_labels=NUM_LABELS,
-            output_attentions=False,
-            output_hidden_states=False)
-
-
-        saved_lm_model
-    else:
-        print('need to define using which model, format is like "Bert", "RoBerta", "XLM"')
-
-elif args.data == 'wassem' or 'AG10K' or 'tweet50k':
-    if args.BertModel == "Bert":
-        from transformers import BertTokenizer, BertForSequenceClassification, AdamW, BertConfig
-
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        model = BertForSequenceClassification.from_pretrained(
-            "bert-base-uncased",
-            num_labels=NUM_LABELS,
-            output_attentions=False,
-            output_hidden_states=False)
-
-        print(' ')
-        print("using Bert")
-    elif args.BertModel == "RoBerta":
-        from transformers import RobertaTokenizer, RobertaForSequenceClassification, AdamW, RobertaConfig
-        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
-        model = RobertaForSequenceClassification.from_pretrained(
-            "roberta-base",
-            num_labels=NUM_LABELS,
-            output_attentions=False,
-            output_hidden_states=False)
-        print(' ')
-        print("using Roberta")
-    elif args.BertModel == "XLM":
-        from transformers import XLMTokenizer, XLMConfig
-
-        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
-        print(' ')
-        print("using XLM")
-
-
-    elif args.saved_lm_model != None:
-        from transformers import BertTokenizer, BertForSequenceClassification, AdamW, BertConfig
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        model = BertForSequenceClassification.from_pretrained(
-            str(args.saved_lm_model),
-            num_labels=NUM_LABELS,
-            output_attentions=False,
-            output_hidden_states=False)
-
-        print(' ')
-        print("using FFFFFine tuned LM: ", args.saved_lm_model)
-    else:
-        print('need to define using which model, format is like "Bert", "RoBerta", "XLM"')
-else:
-    print('need to define using which models')
-
-
-'''
-
-##### set up model, first, decide model version (model_name), for BertModel, need to define again.
-##################  second, decide using multi-label or multi-class
-##################  third, decide which model by using if xx in xx, and then set up the tokenizer and model
 
 if args.saved_lm_model != None:
     model_name = str(args.saved_lm_model)
@@ -531,8 +422,8 @@ def metrics(preds, label):
     label (batch size, 6)
     """
     rounded_preds = torch.round(torch.sigmoid(preds))  # (batch size, 6)
-    pred_array = rounded_preds.detach().numpy()
-    label_array = label.detach().numpy()
+    pred_array = rounded_preds.cpu().detach().numpy()
+    label_array = label.cpu().detach().numpy()
 
     correct = (rounded_preds == label).float()  # convert into float for division
     acc = correct.sum() / len(correct)
