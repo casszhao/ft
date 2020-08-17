@@ -416,12 +416,12 @@ def validate(model, dataloader):
     # Report the final accuracy for this validation run.
 
 
-def metrics(preds, label):
+def metrics(rounded_preds, label):
     """
     preds (batch size, 6) before sigmoid
     label (batch size, 6)
     """
-    rounded_preds = torch.round(torch.sigmoid(preds))  # (batch size, 6)
+    #rounded_preds = torch.round(torch.sigmoid(preds))  # (batch size, 6)
     pred_array = rounded_preds.cpu().detach().numpy()
     label_array = label.cpu().detach().numpy()
 
@@ -506,7 +506,7 @@ if args.data == 'multi-label':
                             attention_mask=b_input_mask)  # return: loss(only if label is given), logit
         logits = outputs
         rounded_preds = torch.round(torch.sigmoid(logits))
-        predictions = torch.cat((predictions, rounded_preds.float()))
+        predictions = torch.cat((predictions, rounded_preds))  #rounded_preds.float()
         labels = torch.cat((labels, b_labels.float()))
     print(' prediction    DONE.')
 
@@ -517,7 +517,7 @@ if args.data == 'multi-label':
     predictions_df = pd.DataFrame(predictions_np,
                                   columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
 
-    test["comment_text"] = test["comment_text"].astype(str)
+    #test["comment_text"] = test["comment_text"].astype(str)
 
     result = pd.concat([test, predictions_df], axis=1)
     #print(test)
