@@ -517,7 +517,11 @@ if args.data == 'multi-label':
     predictions_df = pd.DataFrame(predictions_np,
                                   columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
 
+    test["comment_text"] = test["comment_text"].astype(str)
+
     result = clean_dataset(pd.concat([test, predictions_df], axis=1))
+    #print(test)
+    #print(predictions_df)
 
 
     f1_toxic = f1_score(result['toxic'], result['pred_toxic'], zero_division =1 )
