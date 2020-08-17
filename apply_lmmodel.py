@@ -519,7 +519,7 @@ if args.data == 'multi-label':
 
     test["comment_text"] = test["comment_text"].astype(str)
 
-    result = clean_dataset(pd.concat([test, predictions_df], axis=1))
+    result = pd.concat([test, predictions_df], axis=1)
     #print(test)
     #print(predictions_df)
 
