@@ -67,11 +67,11 @@ validation_path = str(args.data) + '_validation.csv'
 
 if args.testing:
     train = pd.read_csv(train_path).sample(10)
-    test = pd.read_csv(test_path).sample(10)
+    test = pd.read_csv(test_path).sample(10).reset_index()
     validation = pd.read_csv(validation_path).sample(10).dropna()
 elif args.running:
     train = pd.read_csv(train_path)
-    test = pd.read_csv(test_path)
+    test = pd.read_csv(test_path).reset_index()
     validation = pd.read_csv(validation_path).dropna()
 else:
     print('need to define parameter, it is "--running" or "--testing"')
@@ -513,15 +513,17 @@ if args.data == 'multi-label':
     acc, f1_micro, f1_macro = metrics(predictions, labels)
 
     print("acc is {}, micro is {}, macro is {}".format(acc, f1_micro, f1_macro))
+    '''
     predictions_np = predictions.cpu().numpy()
     predictions_df = pd.DataFrame(predictions_np,
-                                  columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
+                                  columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate']).reset_index()
 
     #test["comment_text"] = test["comment_text"].astype(str)
+    print(test)
+    print(predictions_df)
+    #result = pd.concat([test, predictions_df], axis=1)
+    result = test.join(predictions_df)
 
-    result = pd.concat([test, predictions_df], axis=1)
-    #print(test)
-    #print(predictions_df)
 
 
     f1_toxic = f1_score(result['toxic'], result['pred_toxic'], zero_division =1 )
@@ -538,6 +540,7 @@ if args.data == 'multi-label':
     print("f1_identity_hate:", f1_identity_hate)
     print("macro F1:", (f1_toxic + f1_severe_toxic + f1_obscene + f1_threat + f1_insult + f1_identity_hate)/6)
     result.to_csv(str(args.resultpath) + model_name +str(args.data) + '_result.csv', sep='\t')
+    '''
 
 else:
     for batch in prediction_dataloader:
