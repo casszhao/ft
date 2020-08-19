@@ -425,7 +425,7 @@ def metrics(rounded_preds, label):
     pred_array = rounded_preds.cpu().detach().numpy()
     label_array = label.cpu().detach().numpy()
 
-    correct = (rounded_preds == label).float()  # convert into float for division
+    correct = (pred_array == label).float()  # convert into float for division
     acc = correct.sum() / len(correct)
 
     micro_f1 = f1_score(label_array, pred_array, average='micro', zero_division=1)
