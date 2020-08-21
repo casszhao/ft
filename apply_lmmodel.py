@@ -425,12 +425,12 @@ def metrics(rounded_preds, label):
     pred_array = rounded_preds.cpu().detach().numpy()
     label_array = label.cpu().detach().numpy()
 
-    correct = (pred_array == label).float()  # convert into float for division
-    acc = correct.sum() / len(correct)
+    #correct = (pred_array == label).float()  # convert into float for division
+    #acc = correct.sum() / len(correct)
 
     micro_f1 = f1_score(label_array, pred_array, average='micro', zero_division=1)
     macro_f1 = f1_score(label_array, pred_array, average='macro', zero_division=1)
-    return acc, micro_f1, macro_f1
+    return micro_f1, macro_f1
 
 '''
 ================== Training Loop =======================
@@ -510,9 +510,9 @@ if args.data == 'multi-label':
         labels = torch.cat((labels, b_labels.float()))
     print(' prediction    DONE.')
 
-    acc, f1_micro, f1_macro = metrics(predictions, labels)
+    f1_micro, f1_macro = metrics(predictions, labels)
 
-    print("acc is {}, micro is {}, macro is {}".format(acc, f1_micro, f1_macro))
+    print("micro is {}, macro is {}".format(f1_micro, f1_macro))
     '''
     predictions_np = predictions.cpu().numpy()
     predictions_df = pd.DataFrame(predictions_np,
