@@ -513,11 +513,13 @@ if args.data == 'multi-label':
     f1_micro, f1_macro = metrics(predictions, labels)
 
     print("micro is {}, macro is {}".format(f1_micro, f1_macro))
-    '''
+
     predictions_np = predictions.cpu().numpy()
     predictions_df = pd.DataFrame(predictions_np,
                                   columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate']).reset_index()
+    predictions_df.to_csv(str(args.resultpath) + str(resultname) + 'e' + str(args.epochs) +'_prediction.csv')
 
+    '''
     #test["comment_text"] = test["comment_text"].astype(str)
     print(test)
     print(predictions_df)
