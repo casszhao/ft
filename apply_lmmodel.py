@@ -69,6 +69,9 @@ if args.testing:
     train = pd.read_csv(train_path).sample(10)
     test = pd.read_csv(test_path).sample(10).reset_index()
     validation = pd.read_csv(validation_path).sample(10).dropna()
+    print(train)
+    print(test)
+    print(validation)
 elif args.running:
     train = pd.read_csv(train_path)
     test = pd.read_csv(test_path).reset_index()
