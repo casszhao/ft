@@ -513,9 +513,22 @@ if args.data == 'multi-label':
         labels = torch.cat((labels, b_labels.float()))
     print(' prediction    DONE.')
 
-    f1_micro, f1_macro = metrics(predictions, labels)
+    pred_array = predictions.cpu().detach().numpy()
+    label_array = labels.cpu().detach().numpy()
+    print('--------pred_array-------')
+    print(pred_array)
+    print('')
+    print('--------label_array-------')
+    print(label_array)
+    print('')
 
-    print("micro is {}, macro is {}".format(f1_micro, f1_macro))
+    # correct = (pred_array == label).float()  # convert into float for division
+    # acc = correct.sum() / len(correct)
+
+    micro_f1 = f1_score(label_array, pred_array, average='micro', zero_division=1)
+    macro_f1 = f1_score(label_array, pred_array, average='macro', zero_division=1)
+
+    print("micro is {}, macro is {}".format(micro_f1, macro_f1))
 
     predictions_np = predictions.cpu().numpy()
     predictions_df = pd.DataFrame(predictions_np,
