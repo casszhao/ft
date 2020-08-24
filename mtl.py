@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='run fine-tuned model on multi-labe
 parser.add_argument('--saved_lm_model', type=str, help= 'where is the saved trained language model, including path and name')
 parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA'])
 # 1
-parser.add_argument('-e', '--epochs', type=int, default=10, metavar='', help='how many epochs')
+parser.add_argument('-e', '--epochs', type=int, default=3, metavar='', help='how many epochs')
 # 3
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--running', action='store_true', help='running using the original big dataset')
