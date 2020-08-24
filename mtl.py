@@ -288,7 +288,7 @@ for batch in prediction_dataloader:
     labels = torch.cat((labels, b_labels.float()))
 print(' prediction    DONE.')
 
-pred_array = rounded_preds.cpu().detach().numpy()
+pred_array = predictions.cpu().detach().numpy()
 label_array = labels.cpu().detach().numpy()
 
 micro_f1 = f1_score(label_array, pred_array, average='micro', zero_division=1)
