@@ -1,7 +1,6 @@
 *.bin
 *idea
 sample_data/
-*csv
 *.pt
 *.txt
 listfile.txt
@@ -21,3 +20,4 @@ lm_model/
 /xai
 /xaj
 /xak
+slurm*
