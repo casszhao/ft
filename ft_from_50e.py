@@ -60,6 +60,7 @@ if args.LM == 'Bert':
                         )
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased', do_lower_case=False)
     model = BertForMaskedLM.from_pretrained('./multi-label_LM/multi-label_Bert_e50_b16', config=config)
+    #model = BertForMaskedLM.from_pretrained('./multi-label_train.csv_LMmodel', config=config)
     # 12-layer, 768-hidden, 12-heads, 110M parameters.
 
 elif args.LM == 'RoBerta':
