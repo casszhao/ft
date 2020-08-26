@@ -507,8 +507,8 @@ if args.data == 'multi-label':
             # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
             outputs = model(b_input_ids.long(), token_type_ids=None,
                             attention_mask=b_input_mask)  # return: loss(only if label is given), logit
-        logits = outputs
-        rounded_preds = torch.round(torch.sigmoid(logits))
+        #logits = outputs
+        rounded_preds = torch.round(torch.sigmoid(outputs))
         predictions = torch.cat((predictions, rounded_preds))  #rounded_preds.float()
         labels = torch.cat((labels, b_labels.float()))
     print(' prediction    DONE.')
@@ -517,6 +517,7 @@ if args.data == 'multi-label':
     label_array = labels.cpu().detach().numpy()
     print('--------pred_array-------')
     print(pred_array)
+    print('')
     print('')
     print('--------label_array-------')
     print(label_array)
@@ -530,10 +531,11 @@ if args.data == 'multi-label':
 
     print("micro is {}, macro is {}".format(micro_f1, macro_f1))
 
-    predictions_np = predictions.cpu().numpy()
-    predictions_df = pd.DataFrame(predictions_np,
+    #predictions_np = predictions.cpu().numpy()
+    predictions_df = pd.DataFrame(pred_array,
                                   columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate']).reset_index()
-    predictions_df.to_csv(str(args.resultpath) + str(resultname) + 'e' + str(args.epochs) +'_prediction.csv')
+    print(predictions_df)
+    predictions_df.to_csv(str(args.resultpath) + str(model_name) + 'e' + str(args.epochs) +'_prediction.csv')
 
     '''
     #test["comment_text"] = test["comment_text"].astype(str)
