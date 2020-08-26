@@ -290,6 +290,9 @@ print(' prediction    DONE.')
 
 pred_array = predictions.cpu().detach().numpy()
 label_array = labels.cpu().detach().numpy()
+print(pred_array)
+print('-----------label array----------')
+print(label_array)
 
 micro_f1 = f1_score(label_array, pred_array, average='micro', zero_division=1)
 macro_f1 = f1_score(label_array, pred_array, average='macro', zero_division=1)

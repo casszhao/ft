@@ -533,7 +533,7 @@ if args.data == 'multi-label':
 
     #predictions_np = predictions.cpu().numpy()
     predictions_df = pd.DataFrame(pred_array,
-                                  columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate']).reset_index()
+                                  columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
     print(predictions_df)
     predictions_df.to_csv(str(args.resultpath) + str(model_name) + 'e' + str(args.epochs) +'_prediction.csv')
 
