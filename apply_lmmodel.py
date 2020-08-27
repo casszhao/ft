@@ -37,7 +37,7 @@ parser.add_argument('-e', '--epochs', type=int, default=10, metavar='', help='ho
 # 3
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--running', action='store_true', help='running using the original big dataset')
-group.add_argument('--testing', action='store_true', help='testing using the small sample.txt dataset')
+group.add_argument('--testing', action='store_true', help='testing')
 
 group2 = parser.add_mutually_exclusive_group()
 group2.add_argument('--fix', action='store_true', help='fix the bert layers')
@@ -534,8 +534,9 @@ if args.data == 'multi-label':
     #predictions_np = predictions.cpu().numpy()
     predictions_df = pd.DataFrame(pred_array,
                                   columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
+    print('predictions_df')
     print(predictions_df)
-    predictions_df.to_csv(str(args.resultpath) + str(model_name) + 'e' + str(args.epochs) +'_prediction.csv')
+    predictions_df.to_csv(str(args.resultpath) + str(model_name) + '_e' + str(args.epochs) +'_prediction.csv')
 
     '''
     #test["comment_text"] = test["comment_text"].astype(str)
