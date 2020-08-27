@@ -129,7 +129,7 @@ training_args = TrainingArguments(
     overwrite_output_dir=True,
     num_train_epochs= args.num_train_epochs,
     per_device_train_batch_size=args.batch_size,
-    save_steps=1000,
+    save_steps=10000,
     save_total_limit=2,
 )
 
