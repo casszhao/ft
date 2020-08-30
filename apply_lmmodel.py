@@ -536,7 +536,7 @@ if args.data == 'multi-label':
                                   columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
     print('predictions_df')
     print(predictions_df)
-    predictions_df.to_csv(str(args.resultpath) + str(model_name) + '_e' + str(args.epochs) +'_prediction.csv')
+    predictions_df.to_csv(str(model_name) + '_e' +'_prediction.csv')
 
     '''
     #test["comment_text"] = test["comment_text"].astype(str)
