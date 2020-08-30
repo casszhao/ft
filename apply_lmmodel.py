@@ -28,7 +28,7 @@ def format_time(elapsed):
 
 parser = argparse.ArgumentParser(description='run fine-tuned model on multi-label dataset')
 # 0
-parser.add_argument('data', type=str, choices=['multi-label', 'wassem', 'AG10K', 'tweet50k'])
+parser.add_argument('--data', type=str, choices=['multi-label', 'wassem', 'AG10K', 'tweet50k'])
 # 1
 parser.add_argument('--saved_lm_model', type=str, help= 'where is the saved trained language model, including path and name')
 parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA'])
