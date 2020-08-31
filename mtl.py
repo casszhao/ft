@@ -119,7 +119,6 @@ if (('roberta' in model_name) or ('RoBerta' in model_name)):
                                         output_hidden_states=True)
     print('using RoBerta:', model_name)
     print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-    print(model)
 
 elif (('bert' in model_name) or ('Bert' in model_name)):
     from transformers import BertTokenizer
@@ -133,7 +132,6 @@ elif (('bert' in model_name) or ('Bert' in model_name)):
                                      output_hidden_states=True)
     print('using Bert:', model_name)
     print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-    print(model)
 
 elif (('xlm' in model_name) or ('XLM' in model_name)):
     from transformers import XLMTokenizer
@@ -147,7 +145,6 @@ elif (('xlm' in model_name) or ('XLM' in model_name)):
                                     output_hidden_states=True)
     print('using XLM:', model_name)
     print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-    print(model)
 
 else:
     print('using multi-label data but need to define using which model using --BertModel or --saved_lm_model')
