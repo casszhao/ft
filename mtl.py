@@ -26,25 +26,22 @@ def format_time(elapsed):
 parser = argparse.ArgumentParser(description='run fine-tuned model on multi-label dataset')
 # 0
 parser.add_argument('--saved_lm_model', type=str, help= 'where is the saved trained language model, including path and name')
-parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA'])
+parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','Roberta','XLM'])
+
 # 1
-parser.add_argument('-e', '--epochs', type=int, default=3, metavar='', help='how many epochs')
-# 3
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--running', action='store_true', help='running using the original big dataset')
 group.add_argument('--testing', action='store_true', help='testing using the small sample.txt dataset')
 
-# 4
+# 2
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
 
 
 MAX_LEN = 100
-
 NUM_LABELS = 6
-
 batch_size = 16
-epochs = args.epochs
+epochs = 3
 
 
 train_path = 'multi-label_train.csv'
@@ -110,7 +107,7 @@ print('model_name: ', model_name)
 from multi_label_fns import validate_multilable, train_multilabel
 
 
-if (('RoBerta' in model_name) or ('roberta' in model_name)):
+if (('roberta' in model_name) or ('RoBerta' in model_name)):
     from transformers import RobertaTokenizer, RobertaModel
 
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
@@ -124,7 +121,7 @@ if (('RoBerta' in model_name) or ('roberta' in model_name)):
     print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
     print(model)
 
-elif (('Bert' in model_name) or ('bert' in model_name)):
+elif (('bert' in model_name) or ('Bert' in model_name)):
     from transformers import BertTokenizer
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
@@ -138,7 +135,7 @@ elif (('Bert' in model_name) or ('bert' in model_name)):
     print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
     print(model)
 
-elif (('XLM' in model_name) or ('xlm' in model_name)):
+elif (('xlm' in model_name) or ('XLM' in model_name)):
     from transformers import XLMTokenizer
 
     tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
@@ -232,6 +229,8 @@ if args.saved_lm_model != None:
     resultname = str(args.saved_lm_model)
 else:
     resultname = str(args.BertModel) + '_multiLABEL'
+
+print('resultname:', resultname)
 
 
 loss_values = []
