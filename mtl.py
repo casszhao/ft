@@ -97,7 +97,7 @@ elif args.BertModel != None:
     elif args.BertModel == 'RoBerta':
         model_name = 'roberta-base'
     elif args.BertModel == 'XLM':
-        model_name = 'xlm-mlm-enfr-1024'
+        model_name = 'xlm-mlm-ende-1024'
 else:
     print('the model name is not set up, it should be from a pretrained model file(as args.saved_lm_model) or '
           'bert-base-cased or roberta-base or xlm-mlm-enfr-1024')
@@ -136,7 +136,7 @@ elif (('bert' in model_name) or ('Bert' in model_name)):
 elif (('xlm' in model_name) or ('XLM' in model_name)):
     from transformers import XLMTokenizer
 
-    tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
+    tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-ende-1024', do_lower_case=False)
     from multi_label_fns import XLM_clf
 
     model = XLM_clf.from_pretrained(model_name,
@@ -286,6 +286,7 @@ print(' prediction    DONE.')
 
 pred_array = predictions.cpu().detach().numpy()
 label_array = labels.cpu().detach().numpy()
+print('-----------pred array----------')
 print(pred_array)
 print('-----------label array----------')
 print(label_array)
