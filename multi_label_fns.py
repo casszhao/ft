@@ -242,10 +242,16 @@ def validate_multilable(model, dataloader):
     # Report the final accuracy for this validation run.
 
 
+epochs = 3
 def train_multilabel(model, dataloader):
+    from transformers import get_linear_schedule_with_warmup
+    optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
+    total_steps = len(dataloader) * epochs
+    scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                num_warmup_steps=0,  # Default value in run_glue.py
+                                                num_training_steps=total_steps)
     model.train()
     total_loss = 0
-    optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
 
     for step, batch in enumerate(dataloader):
 
@@ -275,6 +281,7 @@ def train_multilabel(model, dataloader):
         # This is to help prevent the "exploding gradients" problem.
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
+        scheduler.step()
 
     train_loss_this_epoch = total_loss / len(dataloader)
 
