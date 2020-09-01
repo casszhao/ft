@@ -214,7 +214,7 @@ validation_dataloader = DataLoader(validation_data, sampler=validation_sampler, 
 '''
 ================== Training Loop =======================
 '''
-optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
+optimizer = AdamW(model.parameters(), lr=2e-5, eps=1e-8)
 from transformers import get_linear_schedule_with_warmup
 total_steps = len(train_dataloader) * epochs
 scheduler = get_linear_schedule_with_warmup(optimizer,
@@ -232,7 +232,7 @@ print('resultname:', resultname)
 
 loss_values = []
 
-# For each epoch...
+# ============ Training =============
 for epoch_i in range(0, epochs):
     print("")
     print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
