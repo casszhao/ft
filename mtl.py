@@ -26,7 +26,7 @@ def format_time(elapsed):
 parser = argparse.ArgumentParser(description='run fine-tuned model on multi-label dataset')
 # 0
 parser.add_argument('--saved_lm_model', type=str, help= 'where is the saved trained language model, including path and name')
-parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','Roberta','XLM'])
+parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','Roberta','XLM','GPT2'])
 
 # 1
 group = parser.add_mutually_exclusive_group()
@@ -98,6 +98,8 @@ elif args.BertModel != None:
         model_name = 'roberta-base'
     elif args.BertModel == 'XLM':
         model_name = 'xlm-mlm-enfr-1024'
+    elif args.BertModel == 'GPT2':
+        model_name = 'gpt2'
 else:
     print('the model name is not set up, it should be from a pretrained model file(as args.saved_lm_model) or '
           'bert-base-cased or roberta-base or xlm-mlm-enfr-1024')
@@ -145,7 +147,20 @@ elif (('xlm' in model_name) or ('XLM' in model_name)):
                                     output_hidden_states=True)
     print('using XLM:', model_name)
     print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-
+elif 'gpt2' in model_name:
+    from transformers import GPT2Tokenizer, GPT2PreTrainedModel
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case = False)
+    tokenizer.cls_token = tokenizer.cls_token_id
+    tokenizer.pad_token = tokenizer.eos_token
+    from gpt2 import GPT2_clf
+    model = GPT2_clf.from_pretrained(model_name,
+                                     num_labels=NUM_LABELS,
+                                     output_attentions=False,
+                                     output_hidden_states=True,
+                                     use_cache=False,
+                                     )
+    print('using GPT2:', model_name)
+    print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
 else:
     print('using multi-label data but need to define using which model using --BertModel or --saved_lm_model')
 

@@ -23,6 +23,8 @@ else:
     print('No GPU available, using the CPU instead.')
     device = torch.device("cpu")
 
+
+
 class Bert_clf(BertPreTrainedModel):
     def __init__(self, config, token='cls'):
         super().__init__(config)
@@ -197,7 +199,7 @@ class XLM_clf(XLMPreTrainedModel):
         elif self.token == 'cls':
             pooled_output = outputs[0]
             pooled_output = self.dropout(pooled_output).permute(0, 2, 1)
-            # [batch_size, sequence_length, hidden_size]
+            # [batch_size, sequence_length, hidden_size] -> [batch_size, hidden_size, sequence_length]
             pooled = F.max_pool1d(pooled_output, pooled_output.shape[2]).squeeze(2)
             logits = self.classifier(pooled)
         else:
@@ -212,6 +214,8 @@ class XLM_clf(XLMPreTrainedModel):
 
         return output
 
+
+### functions not models
 
 def validate_multilable(model, dataloader):
     print(" === Validation ===")
