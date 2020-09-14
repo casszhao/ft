@@ -99,7 +99,7 @@ elif args.BertModel != None:
     elif args.BertModel == 'XLM':
         model_name = 'xlm-mlm-enfr-1024'
     elif args.BertModel == 'GPT2':
-        model_name = 'gpt2'
+        model_name = 'gpt2-medium'
 else:
     print('the model name is not set up, it should be from a pretrained model file(as args.saved_lm_model) or '
           'bert-base-cased or roberta-base or xlm-mlm-enfr-1024')
