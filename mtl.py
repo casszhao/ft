@@ -126,9 +126,9 @@ elif (('bert' in model_name) or ('Bert' in model_name)):
     from transformers import BertTokenizer
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-    from multi_label_fns import Bert_clf
+    from multi_label_fns import Bert_clf, BertForMTL
 
-    model = Bert_clf.from_pretrained(model_name,
+    model = BertForMTL.from_pretrained(model_name,
                                      num_labels=NUM_LABELS,
                                      output_attentions=False,
                                      output_hidden_states=True)
@@ -152,7 +152,7 @@ elif 'gpt2' in model_name:
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case = False)
     tokenizer.cls_token = tokenizer.cls_token_id
     tokenizer.pad_token = tokenizer.eos_token
-    from gpt2 import GPT2_clf
+    from multi_label_fns import GPT2_clf
     model = GPT2_clf.from_pretrained(model_name,
                                      num_labels=NUM_LABELS,
                                      output_attentions=False,

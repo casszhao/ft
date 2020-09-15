@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(description='run fine-tuned model on multi-labe
 parser.add_argument('--data', type=str) #, choices=['multi-label', 'wassem', 'AG10K', 'tweet50k']
 # 1
 parser.add_argument('--saved_lm_model', type=str, help= 'where is the saved trained language model, including path and name')
-parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA'])
+parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA', 'GPT2'])
 # 2
 parser.add_argument('-e', '--epochs', type=int, default=10, metavar='', help='how many epochs')
 # 3
@@ -167,6 +167,8 @@ elif args.BertModel != None:
         model_name = 'roberta-base'
     elif args.BertModel == 'XLM':
         model_name = 'xlm-mlm-enfr-1024'
+    elif args.BertModel == 'GPT2':
+        model_name = 'gpt2'
 else:
     print('the model name is not set up, it should be from a pretrained model file(as args.saved_lm_model) or '
           'bert-base-cased or roberta-base or xlm-mlm-enfr-1024')
@@ -250,8 +252,25 @@ elif (args.data == 'wassem' or 'AG10K' or 'tweet50k'):
                                                              )
         print(' ')
         print('using XLM:', model_name)
+
+    elif 'gpt2' in model_name:
+        from transformers import GPT2Tokenizer, GPT2PreTrainedModel, GPT2DoubleHeadsModel
+        tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
+        tokenizer.cls_token = tokenizer.cls_token_id
+        tokenizer.pad_token = tokenizer.eos_token
+        from gpt2 import GPT2_clf
+
+        model = GPT2_clf.from_pretrained(model_name,
+                                         num_labels=NUM_LABELS,
+                                         output_attentions=False,
+                                         output_hidden_states=False,
+                                         use_cache=False,
+                                         )
+        print(' ')
+        print('using GPT2:', model_name)
     else:
         print('defined multi-class classification but the model fails settingup')
+
 else:
     print('need to define using which dataset')
 
@@ -368,7 +387,7 @@ def train(model, dataloader):
                             attention_mask=b_input_mask,
                             labels=b_labels,
                             output_attentions = False,
-                            output_hidden_states=False,
+                            #output_hidden_states=False,
                             )
 
         total_loss += loss.item()
@@ -573,8 +592,8 @@ else:
             # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
             outputs = model(b_input_ids.long(), token_type_ids=None,
                             attention_mask=b_input_mask)  # return: loss(only if label is given), logit
-        logits = outputs[0]
-        softmax = torch.nn.functional.softmax(logits, dim=1)
+        #logits = outputs[0]
+        softmax = torch.nn.functional.softmax(outputs, dim=1)
         prediction = softmax.argmax(dim=1)
         predictions = torch.cat((predictions, prediction.float()))
         # true_labels = torch.cat((true_labels, b_labels.float()))

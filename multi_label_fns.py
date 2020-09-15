@@ -1,4 +1,5 @@
-from transformers import BertPreTrainedModel, BertModel, BertConfig, RobertaConfig, XLMConfig, XLMModel, XLMPreTrainedModel, RobertaModel
+from transformers import BertPreTrainedModel, BertModel, BertConfig, RobertaConfig, \
+    XLMConfig, XLMModel, XLMPreTrainedModel, RobertaModel, GPT2PreTrainedModel, GPT2Model
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
@@ -22,6 +23,72 @@ if torch.cuda.is_available():
 else:
     print('No GPU available, using the CPU instead.')
     device = torch.device("cpu")
+
+
+class BertForMTL(BertPreTrainedModel):
+    def __init__(self, config):
+        super().__init__(config)
+        self.num_labels = config.num_labels
+
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+
+        self.init_weights()
+
+    def forward(
+        self,
+        input_ids=None,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        head_mask=None,
+        inputs_embeds=None,
+        labels=None,
+        output_attentions=None,
+        output_hidden_states=None,
+        return_dict=None,
+    ):
+
+        #return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        outputs = self.bert(
+            input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            #return_dict=return_dict,
+        )
+
+        pooled_output = outputs[1]
+
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
+
+        loss = None
+        if labels is not None:
+            if self.num_labels == 1:
+                #  We are doing regression
+                loss_fct = MSELoss()
+                loss = loss_fct(logits.view(-1), labels.view(-1))
+            else:
+                loss_fct = nn.NLLLoss()
+                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+
+        if not return_dict:
+            output = (logits,) + outputs[2:]
+            return ((loss,) + output) if loss is not None else output
+
+        return SequenceClassifierOutput(
+            loss=loss,
+            logits=logits,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
+        )
 
 
 
@@ -146,6 +213,56 @@ class RoBerta_clf(BertPreTrainedModel):
 
         return output
 
+class GPT2_clf(GPT2PreTrainedModel):
+    def __init__(self, config):
+        super().__init__(config)
+        self.num_labels = config.num_labels
+        self.transformers = GPT2Model(config)
+        self.dropout = nn.Dropout(0.1)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.init_weights()
+
+    def forward(
+            self,
+            input_ids=None,
+            attention_mask=None,
+            token_type_ids=None,
+            position_ids=None,
+            head_mask=None,
+            inputs_embeds=None,
+            labels=None,
+            output_attentions=None,
+    ):
+
+        outputs = self.transformers(
+            input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+        )
+        # 0: last_hidden_state (torch.FloatTensor of shape (batch_size, sequence_length, hidden_size))
+        #                       – Sequence of hidden-states at the output of the last layer of the model.
+        # 1: past_key_values (optional, returned when use_cache=True is passed)
+        # 2: hidden_states (optional, returned when output_hidden_states=True is passed ,
+        #                   one for the output of the embeddings + one for the output of each layer)
+        #                  of shape (batch_size, sequence_length, hidden_size).
+        # 3: attentions
+
+        pooled_output = outputs[0].permute(0,2,1) # (batch_size, hidden_size, sequence_length)
+        pooled_output = F.max_pool1d(pooled_output, pooled_output.shape[2]).squeeze(2)
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
+
+        if labels is not None:
+            loss_fct = nn.BCEWithLogitsLoss()#.to(device)
+            loss = loss_fct(logits, labels)
+            output = (loss, logits)
+        else:
+            output = logits
+
+        return output  # (loss), logits
 
 
 class XLM_clf(XLMPreTrainedModel):

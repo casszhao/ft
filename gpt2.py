@@ -64,12 +64,11 @@ class GPT2_clf(GPT2PreTrainedModel):
         logits = self.classifier(pooled_output)
 
         if labels is not None:
-            loss_fct = nn.BCEWithLogitsLoss()#.to(device)
+            loss_fct = nn.CrossEntropyLoss()#.to(device)
             loss = loss_fct(logits, labels)
             output = (loss, logits)
         else:
             output = logits
 
         return output  # (loss), logits
-
 
