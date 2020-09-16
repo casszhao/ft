@@ -2,12 +2,14 @@
 
 from transformers import BertPreTrainedModel, BertModel
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 import time
 from transformers import AdamW
 import numpy as np
 import pandas as pd
-from sklearn.metrics import f1_score, classification_report
+from sklearn.metrics import classification_report, confusion_matrix, multilabel_confusion_matrix, f1_score, accuracy_score
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 import argparse
 import datetime
@@ -35,7 +37,7 @@ group.add_argument('--testing', action='store_true', help='testing using the sma
 
 # 2
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
-parser.add_argument('--epochs', '-e', type=str, help='where to save the result csv')
+parser.add_argument('--epochs', '-e', type=int, help='where to save the result csv')
 args = parser.parse_args()
 
 
@@ -124,15 +126,14 @@ if (('roberta' in model_name) or ('RoBerta' in model_name)):
     print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
 
 elif (('bert' in model_name) or ('Bert' in model_name)):
-    from transformers import BertTokenizer
+    from transformers import BertTokenizer, BertForSequenceClassification
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
     from multi_label_fns import Bert_clf, BertForMTL
 
-    model = BertForMTL.from_pretrained(model_name,
-                                     num_labels=NUM_LABELS,
-                                     output_attentions=False,
-                                     output_hidden_states=True)
+    model = BertForSequenceClassification.from_pretrained(model_name, num_labels=NUM_LABELS, output_attentions=False, output_hidden_states=True)
+
+    #model = BertForMTL.from_pretrained(model_name, num_labels=NUM_LABELS, output_attentions=False, output_hidden_states=True)
     print('using Bert:', model_name)
     print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
 
@@ -250,15 +251,70 @@ loss_values = []
 
 # ============ Training =============
 for epoch_i in range(0, epochs):
-    print("")
-    print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
-    t0 = time.time()
-    train_loss = train_multilabel(model, train_dataloader)
+
+    for step, batch in enumerate(train_dataloader):
+
+        print("")
+        print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
+        model.train()
+        t0 = time.time()
+        #batch = tuple(t.to(device) for t in batch)
+        #b_input_ids, b_input_mask, b_labels = batch
+
+        b_input_ids = batch[0].long().to(device)
+        b_input_mask = batch[1].long().to(device)
+        b_labels = batch[2].float().to(device)
+
+        optimizer.zero_grad()
+
+        outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)
+        logits = outputs[0]
+        loss_func = nn.BCEWithLogitsLoss()
+        loss = loss_func(logits.view(-1, NUM_LABELS), b_labels.type_as(logits).view(-1, NUM_LABELS))
+
+        loss.backward()
+        optimizer.step()
+
     print("  Training epcoh took: {:}".format(format_time(time.time() - t0)))
     print("")
     print("Running Validation...")
 
-    valid_loss = validate_multilable(model, validation_dataloader)
+    model.eval()
+
+    logit_preds, true_labels, pred_labels, tokenized_texts = [], [], [], []
+
+    for i, batch in enumerate(validation_dataloader):
+        b_input_ids = batch[0].long().to(device)
+        b_input_mask = batch[1].long().to(device)
+        b_labels = batch[2].float().to(device)
+        with torch.no_grad():
+            # Forward pass
+            outs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)
+            b_logit_pred = outs[0]
+            pred_label = torch.sigmoid(b_logit_pred)
+
+            b_logit_pred = b_logit_pred.detach().cpu().numpy()
+            pred_label = pred_label.to('cpu').numpy()
+            b_labels = b_labels.to('cpu').numpy()
+
+        tokenized_texts.append(b_input_ids)
+        logit_preds.append(b_logit_pred)
+        true_labels.append(b_labels)
+        pred_labels.append(pred_label)
+
+        # Flatten outputs
+    pred_labels = [item for sublist in pred_labels for item in sublist]
+    true_labels = [item for sublist in true_labels for item in sublist]
+
+    # Calculate Accuracy
+    threshold = 0.50
+    pred_bools = [pl > threshold for pl in pred_labels]
+    true_bools = [tl == 1 for tl in true_labels]
+    val_f1_accuracy = f1_score(true_bools, pred_bools, average='micro') * 100
+    val_flat_accuracy = accuracy_score(true_bools, pred_bools) * 100
+
+    print('F1 Validation Accuracy: ', val_f1_accuracy)
+    print('Flat Validation Accuracy: ', val_flat_accuracy)
 
     print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
@@ -294,7 +350,7 @@ for batch in prediction_dataloader:
         # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
         outputs = model(b_input_ids.long(), token_type_ids=None,
                         attention_mask=b_input_mask)  # return: loss(only if label is given), logit
-    logits = outputs
+    logits = outputs[0]
     rounded_preds = torch.round(torch.sigmoid(logits))
     predictions = torch.cat((predictions, rounded_preds))  #rounded_preds.float()
     labels = torch.cat((labels, b_labels.float()))
