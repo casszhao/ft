@@ -33,7 +33,7 @@ parser.add_argument('--data', type=str) #, choices=['multi-label', 'wassem', 'AG
 parser.add_argument('--saved_lm_model', type=str, help= 'where is the saved trained language model, including path and name')
 parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA', 'GPT2'])
 # 2
-parser.add_argument('-e', '--epochs', type=int, default=10, metavar='', help='how many epochs')
+parser.add_argument('-e', '--epochs', type=int, default=3, metavar='', help='how many epochs')
 # 3
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--running', action='store_true', help='running using the original big dataset')

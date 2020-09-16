@@ -35,13 +35,14 @@ group.add_argument('--testing', action='store_true', help='testing using the sma
 
 # 2
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
+parser.add_argument('--epochs', '-e', type=str, help='where to save the result csv')
 args = parser.parse_args()
 
 
 MAX_LEN = 100
 NUM_LABELS = 6
 batch_size = 16
-epochs = 3
+epochs = args.epochs
 
 
 train_path = 'multi-label_train.csv'
