@@ -374,8 +374,9 @@ pred_bools = [pl>0.50 for pl in pred_labels] #boolean output after thresholding
 # Print and save classification report
 print('Test F1 Accuracy: ', f1_score(true_bools, pred_bools,average='micro'))
 print('Test Flat Accuracy: ', accuracy_score(true_bools, pred_bools),'\n')
+test_label_cols = ['toxic', 'severe toxic', 'obscene', 'threat', 'insult', 'hate']
 clf_report = classification_report(true_bools,pred_bools,target_names=test_label_cols)
-pickle.dump(clf_report, open('classification_report.txt','wb')) #save report
+#pickle.dump(clf_report, open('classification_report.txt','wb')) #save report
 print(clf_report)
 
 
