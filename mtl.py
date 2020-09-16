@@ -339,6 +339,47 @@ def clean_dataset(df):
 
 
 labels = torch.Tensor().to(device)
+
+logit_preds,true_labels,pred_labels,tokenized_texts = [],[],[],[]
+
+for i, batch in enumerate(prediction_dataloader):
+
+    b_input_ids = batch[0].long().to(device)
+    b_input_mask = batch[1].long().to(device)
+    b_labels = batch[2].float().to(device)
+    with torch.no_grad():
+    # Forward pass
+        outs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)
+        b_logit_pred = outs[0]
+        pred_label = torch.sigmoid(b_logit_pred)
+
+        b_logit_pred = b_logit_pred.detach().cpu().numpy()
+        pred_label = pred_label.to('cpu').numpy()
+        b_labels = b_labels.to('cpu').numpy()
+
+    tokenized_texts.append(b_input_ids)
+    logit_preds.append(b_logit_pred)
+    true_labels.append(b_labels)
+    pred_labels.append(pred_label)
+
+# Flatten outputs
+tokenized_texts = [item for sublist in tokenized_texts for item in sublist]
+pred_labels = [item for sublist in pred_labels for item in sublist]
+true_labels = [item for sublist in true_labels for item in sublist]
+# Converting flattened binary values to boolean values
+true_bools = [tl==1 for tl in true_labels]
+
+pred_bools = [pl>0.50 for pl in pred_labels] #boolean output after thresholding
+
+# Print and save classification report
+print('Test F1 Accuracy: ', f1_score(true_bools, pred_bools,average='micro'))
+print('Test Flat Accuracy: ', accuracy_score(true_bools, pred_bools),'\n')
+clf_report = classification_report(true_bools,pred_bools,target_names=test_label_cols)
+pickle.dump(clf_report, open('classification_report.txt','wb')) #save report
+print(clf_report)
+
+
+'''
 for batch in prediction_dataloader:
     # Add batch to GPU
     batch = tuple(t.to(device) for t in batch)
@@ -366,3 +407,4 @@ print(label_array)
 micro_f1 = f1_score(label_array, pred_array, average='micro', zero_division=1)
 macro_f1 = f1_score(label_array, pred_array, average='macro', zero_division=1)
 print('micro_f1: {}    macro_f1: {}'.format(micro_f1, macro_f1))
+'''
