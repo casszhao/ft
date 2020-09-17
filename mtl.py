@@ -53,8 +53,8 @@ validation_path = 'multi-label_validation.csv'
 
 if args.testing:
     train = pd.read_csv(train_path).sample(10)
-    test = pd.read_csv(test_path).sample(10) #.reset_index()
-    validation = pd.read_csv(validation_path).sample(10).dropna()
+    test = pd.read_csv(test_path).sample(100) #.reset_index()
+    validation = pd.read_csv(validation_path).sample(100).dropna()
 elif args.running:
     train = pd.read_csv(train_path)
     test = pd.read_csv(test_path) #.reset_index()
@@ -251,15 +251,12 @@ loss_values = []
 
 # ============ Training =============
 for epoch_i in range(0, epochs):
+    print("")
+    print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
+    t0 = time.time()
+    model.train()
 
     for step, batch in enumerate(train_dataloader):
-
-        print("")
-        print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
-        model.train()
-        t0 = time.time()
-        #batch = tuple(t.to(device) for t in batch)
-        #b_input_ids, b_input_mask, b_labels = batch
 
         b_input_ids = batch[0].long().to(device)
         b_input_mask = batch[1].long().to(device)
@@ -310,6 +307,7 @@ for epoch_i in range(0, epochs):
     threshold = 0.50
     pred_bools = [pl > threshold for pl in pred_labels]
     true_bools = [tl == 1 for tl in true_labels]
+
     val_f1_accuracy = f1_score(true_bools, pred_bools, average='micro') * 100
     val_flat_accuracy = accuracy_score(true_bools, pred_bools) * 100
 
@@ -329,15 +327,13 @@ prediction_dataloader = DataLoader(prediction_data, sampler=prediction_sampler, 
 
 model.eval()
 
-predictions = torch.Tensor().to(device)
-
 def clean_dataset(df):
     assert isinstance(df, pd.DataFrame), "df needs to be a pd.DataFrame"
     df.dropna(inplace=True)
     indices_to_keep = ~df.isin([np.nan, np.inf, -np.inf]).any(1)
     return df[indices_to_keep].astype(np.float64)
 
-
+predictions = torch.Tensor().to(device)
 labels = torch.Tensor().to(device)
 
 logit_preds,true_labels,pred_labels,tokenized_texts = [],[],[],[]
@@ -370,6 +366,9 @@ true_labels = [item for sublist in true_labels for item in sublist]
 true_bools = [tl==1 for tl in true_labels]
 
 pred_bools = [pl>0.50 for pl in pred_labels] #boolean output after thresholding
+
+print('pred_bools', pred_bools)
+print('true_bools', true_bools)
 
 # Print and save classification report
 print('Test F1 Accuracy: ', f1_score(true_bools, pred_bools,average='micro'))
