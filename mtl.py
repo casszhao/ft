@@ -166,6 +166,68 @@ elif 'gpt2' in model_name:
 else:
     print('using multi-label data but need to define using which model using --BertModel or --saved_lm_model')
 
+print('=================== params ===============')
+params = list(model.named_parameters())
+print('params[:][0]', params[:][0])
+
+
+print('The BERT model has {:} different named parameters.\n'.format(len(params)))
+
+print('==== Embedding Layer ====\n')
+
+for p in params[0:5]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+
+print('\n==== Transformer 0====\n')
+for p in params[5:21]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 1====\n')
+for p in params[21:37]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 2====\n')
+for p in params[37:53]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 3====\n')
+for p in params[53:69]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 4====\n')
+for p in params[69:85]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 5====\n')
+for p in params[85:101]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 6====\n')
+for p in params[101:117]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 7====\n')
+for p in params[117:133]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 8====\n')
+for p in params[133:149]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 9====\n')
+for p in params[149:165]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 10====\n')
+for p in params[165:181]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 11====\n')
+for p in params[181:197]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer NNNNN====\n')
+for p in params[197:-4]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+
+
+print('\n==== Output Layer ====\n')
+
+for p in params[-4:]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+
+
+
+
+
 model.to(device)
 
 
@@ -267,7 +329,8 @@ for epoch_i in range(0, epochs):
         outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)
         logits = outputs[0]
         loss_func = nn.BCEWithLogitsLoss()
-        loss = loss_func(logits.view(-1, NUM_LABELS), b_labels.type_as(logits).view(-1, NUM_LABELS))
+        #loss = loss_func(logits.view(-1, NUM_LABELS), b_labels.type_as(logits).view(-1, NUM_LABELS))
+        loss = loss_func(logits, b_labels)
 
         loss.backward()
         optimizer.step()

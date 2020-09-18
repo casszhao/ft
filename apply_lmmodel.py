@@ -69,9 +69,6 @@ if args.testing:
     train = pd.read_csv(train_path).sample(10)
     test = pd.read_csv(test_path).sample(10).reset_index()
     validation = pd.read_csv(validation_path).sample(10).dropna()
-    print(train)
-    print(test)
-    print(validation)
 elif args.running:
     train = pd.read_csv(train_path)
     test = pd.read_csv(test_path).reset_index()
@@ -279,6 +276,7 @@ print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable pa
 
 ############################ Model and Tokenizer all set up
 params = list(model.named_parameters())
+
 
 if args.fix:
     if args.BertModel == 'Bert':
@@ -534,13 +532,6 @@ if args.data == 'multi-label':
 
     pred_array = predictions.cpu().detach().numpy()
     label_array = labels.cpu().detach().numpy()
-    print('--------pred_array-------')
-    print(pred_array)
-    print('')
-    print('')
-    print('--------label_array-------')
-    print(label_array)
-    print('')
 
     # correct = (pred_array == label).float()  # convert into float for division
     # acc = correct.sum() / len(correct)
@@ -553,18 +544,15 @@ if args.data == 'multi-label':
     #predictions_np = predictions.cpu().numpy()
     predictions_df = pd.DataFrame(pred_array,
                                   columns = ['pred_toxic', 'pred_severe_toxic', 'pred_obscene', 'pred_threat', 'pred_insult', 'pred_identity_hate'])
-    print('predictions_df')
+    print(' =========== predictions_df ============')
     print(predictions_df)
-    predictions_df.to_csv(str(model_name) + '_e' +'_prediction.csv')
 
-    '''
+
     #test["comment_text"] = test["comment_text"].astype(str)
-    print(test)
-    print(predictions_df)
+    #print(test)
+    #print(predictions_df)
     #result = pd.concat([test, predictions_df], axis=1)
     result = test.join(predictions_df)
-
-
 
     f1_toxic = f1_score(result['toxic'], result['pred_toxic'], zero_division =1 )
     f1_severe_toxic = f1_score(result['severe_toxic'], result['pred_severe_toxic'], zero_division =1)
@@ -580,7 +568,7 @@ if args.data == 'multi-label':
     print("f1_identity_hate:", f1_identity_hate)
     print("macro F1:", (f1_toxic + f1_severe_toxic + f1_obscene + f1_threat + f1_insult + f1_identity_hate)/6)
     result.to_csv(str(args.resultpath) + model_name +str(args.data) + '_result.csv', sep='\t')
-    '''
+
 
 else:
     for batch in prediction_dataloader:

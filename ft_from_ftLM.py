@@ -62,7 +62,8 @@ config = BertConfig(vocab_size=28996,
                     )
 
 tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased', do_lower_case=False)
-model = BertForMaskedLM.from_pretrained(str(args.ftLMpath), config=config)
+#model = BertForMaskedLM.from_pretrained(str(args.ftLMpath), config=config)
+model = BertForMaskedLM.from_pretrained('bert-base-cased', config=config)
 print('===========================')
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 print('===========================')
