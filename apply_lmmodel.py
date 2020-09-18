@@ -40,8 +40,8 @@ group.add_argument('--running', action='store_true', help='running using the ori
 group.add_argument('--testing', action='store_true', help='testing')
 
 group2 = parser.add_mutually_exclusive_group()
-group2.add_argument('--fix', action='store_true', help='fix the bert layers')
-group2.add_argument('--nofix', action='store_true', help='no fix the bert layers')
+parser.add_argument('--freeze', type=str, help='define which layers to freeze')
+
 
 # 4
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
@@ -278,25 +278,80 @@ print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable pa
 params = list(model.named_parameters())
 
 
-if args.fix:
-    if args.BertModel == 'Bert':
-        for p in params[5:21]:
-            p[1].requires_grad = False
-    elif args.BertModel == 'RoBerta':
-        for p in params[5:21]:
-            p[1].requires_grad = False
-    elif args.BertModel == 'XLM' or 'XLNet':
-        for param in model.transformer.parameters():
-            param.requires_grad = False
-    elif args.BertModel == 'ELECTRA':
-        for param in model.electra.parameters():
-            param.requires_grad = False
 
-    print(f'{args.BertModel}  (FFFrozen paras) has {count_parameters(model):,} trainable parameters')
-elif args.nofix:
-    pass
+print('==== Embedding Layer ====\n')
+
+for p in params[0:5]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+
+print('\n==== Transformer 0====\n')
+for p in params[5:21]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 1====\n')
+for p in params[21:37]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 2====\n')
+for p in params[37:53]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 3====\n')
+for p in params[53:69]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 4====\n')
+for p in params[69:85]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 5====\n')
+for p in params[85:101]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 6====\n')
+for p in params[101:117]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 7====\n')
+for p in params[117:133]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 8====\n')
+for p in params[133:149]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 9====\n')
+for p in params[149:165]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 10====\n')
+for p in params[165:181]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer 11====\n')
+for p in params[181:197]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print('\n==== Transformer NNNNN====\n')
+for p in params[197:-4]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+
+print('\n==== Output Layer ====\n')
+
+for p in params[-4:]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+
+
+
+def freeze_layer_fun(freeze_layers_start, freeze_layers_end):
+    for name, param in params[freeze_layers_start : freeze_layers_end]:
+        print(name)
+        param.requires_grad = False
+
+
+print('The model has {:} different named parameters.\n'.format(len(params)))
+print(f'The model (before freezing) has {count_parameters(model):,} trainable parameters')
+
+if args.freeze == 'freeze_T1':
+    freeze_layer_fun(5, 21)
+elif args.freeze == 'freeze_T2':
+    freeze_layer_fun(21, 37)
+elif args.freeze == 'freeze_T3':
+    freeze_layer_fun(37, 53)
 else:
-    print('need to define fix or not fix by --fix or --nofix')
+    pass
+
+print('===========================')
+print(f'The model has {count_parameters(model):,} trainable parameters')
+print('===========================')
 
 model.to(device)
 
@@ -567,8 +622,7 @@ if args.data == 'multi-label':
     print("f1_insult:", f1_insult)
     print("f1_identity_hate:", f1_identity_hate)
     print("macro F1:", (f1_toxic + f1_severe_toxic + f1_obscene + f1_threat + f1_insult + f1_identity_hate)/6)
-    result.to_csv(str(args.resultpath) + model_name +str(args.data) + '_result.csv', sep='\t')
-
+    result.to_csv(str(args.resultpath) + model_name +str(args.freeze) + '_result.csv', sep='\t')
 
 else:
     for batch in prediction_dataloader:

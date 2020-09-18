@@ -21,6 +21,7 @@ parser.add_argument('--num_train_epochs', '-e', type=int)
 parser.add_argument('--csvfile', type=str, help='a csv file, to be used for fine-tuning, it should be a concatenated txt file from multiple txt files')
 
 parser.add_argument('--ftLMpath', type=str, help='a file path which contains pre-trained LM model.')
+
 args = parser.parse_args()
 
 import pandas as pd
@@ -117,19 +118,14 @@ print('\n==== Transformer NNNNN====\n')
 for p in params[197:-4]:
     print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
-
 print('\n==== Output Layer ====\n')
 
 for p in params[-4:]:
     print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
-def freeze_layer_fun(freeze_layer):
-    for name, param in model.named_parameters():
-        if freeze_layer in name:
-            print(name)
-            param.requires_grad = False
-        else:
-            pass
+
+
+
 
 print('++++++++++++++++++++++++++++++++++++ freeze layers +++++++++++++++++++++++++++++')
 '''
