@@ -346,6 +346,20 @@ elif args.freeze == 'freeze_T2':
     freeze_layer_fun(21, 37)
 elif args.freeze == 'freeze_T3':
     freeze_layer_fun(37, 53)
+elif args.freeze == 'attention_per_transformer':
+    freeze_layer_fun(5, 15)
+    freeze_layer_fun(21, 31)
+    freeze_layer_fun(37, 47)
+    freeze_layer_fun(53, 63)
+    freeze_layer_fun(69, 79)
+    freeze_layer_fun(85, 95)
+    freeze_layer_fun(101, 111)
+    freeze_layer_fun(117, 127)
+    freeze_layer_fun(133, 143)
+    freeze_layer_fun(149, 159)
+    freeze_layer_fun(165, 175)
+    freeze_layer_fun(181, 191)
+
 else:
     pass
 
