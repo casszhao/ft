@@ -346,6 +346,26 @@ elif args.freeze == 'freeze_T2':
     freeze_layer_fun(21, 37)
 elif args.freeze == 'freeze_T3':
     freeze_layer_fun(37, 53)
+elif args.freeze == 'freeze_T4':
+    freeze_layer_fun(53, 69)
+elif args.freeze == 'freeze_T5':
+    freeze_layer_fun(69, 85)
+elif args.freeze == 'freeze_T6':
+    freeze_layer_fun(85, 101)
+elif args.freeze == 'freeze_T7':
+    freeze_layer_fun(101, 117)
+elif args.freeze == 'freeze_T8':
+    freeze_layer_fun(117, 133)
+elif args.freeze == 'freeze_T9':
+    freeze_layer_fun(133, 149)
+elif args.freeze == 'freeze_T10':
+    freeze_layer_fun(149, 165)
+elif args.freeze == 'freeze_T11':
+    freeze_layer_fun(165, 181)
+elif args.freeze == 'freeze_T12':
+    freeze_layer_fun(181, 197)
+elif args.freeze == 'freeze_T13':
+    freeze_layer_fun(69, 85)
 elif args.freeze == 'attention_per_transformer':
     freeze_layer_fun(5, 15)
     freeze_layer_fun(21, 31)
