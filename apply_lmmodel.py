@@ -30,20 +30,20 @@ parser = argparse.ArgumentParser(description='run fine-tuned model on multi-labe
 # 0
 parser.add_argument('--data', type=str) #, choices=['multi-label', 'wassem', 'AG10K', 'tweet50k']
 # 1
-parser.add_argument('--saved_lm_model', type=str, help= 'where is the saved trained language model, including path and name')
-parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA', 'GPT2'])
+parser.add_argument('--FTModel', type=str, help= 'where is the saved trained language model, including path and name')
+parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA', 'gpt2'])
 # 2
 parser.add_argument('-e', '--epochs', type=int, default=3, metavar='', help='how many epochs')
 # 3
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--running', action='store_true', help='running using the original big dataset')
 group.add_argument('--testing', action='store_true', help='testing')
-
-group2 = parser.add_mutually_exclusive_group()
-parser.add_argument('--freeze', type=str, help='define which layers to freeze')
-
-
+# 3
+parser.add_argument('--freeze', type=str, help='define which layers to freeze', nargs='+')
+parser.add_argument('--freeze_attention', action='store_true', help='freeze attention')
 # 4
+
+# 5
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
 
@@ -155,8 +155,8 @@ else:
 
 
 
-if args.saved_lm_model != None:
-    model_name = str(args.saved_lm_model)
+if args.FTModel != None:
+    model_name = str(args.FTModel)
 elif args.BertModel != None:
     if args.BertModel == 'Bert':
         model_name = 'bert-base-cased'
@@ -164,10 +164,10 @@ elif args.BertModel != None:
         model_name = 'roberta-base'
     elif args.BertModel == 'XLM':
         model_name = 'xlm-mlm-enfr-1024'
-    elif args.BertModel == 'GPT2':
+    elif args.BertModel == 'gpt2':
         model_name = 'gpt2'
 else:
-    print('the model name is not set up, it should be from a pretrained model file(as args.saved_lm_model) or '
+    print('the model name is not set up, it should be from a pretrained model file(as args.FTModel) or '
           'bert-base-cased or roberta-base or xlm-mlm-enfr-1024')
 print('model_name: ', model_name)
 
@@ -211,8 +211,24 @@ if args.data == 'multi-label':
         print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
         print(model)
 
+    elif 'gpt2' in model_name:
+        from transformers import GPT2Tokenizer, GPT2PreTrainedModel, GPT2DoubleHeadsModel
+        tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
+        tokenizer.cls_token = tokenizer.cls_token_id
+        tokenizer.pad_token = tokenizer.eos_token
+        from gpt2 import GPT2_multilabel_clf
+
+        model = GPT2_multilabel_clf.from_pretrained(model_name,
+                                         num_labels=NUM_LABELS,
+                                         output_attentions=False,
+                                         output_hidden_states=False,
+                                         use_cache=False,
+                                         )
+        print(' ')
+        print('using GPT2:', model_name)
+
     else:
-        print('using multi-label data but need to define using which model using --BertModel or --saved_lm_model')
+        print('using multi-label data but need to define using which model using --BertModel or --FTModel')
 
 # multi-class
 elif (args.data == 'wassem' or 'AG10K' or 'tweet50k'):
@@ -255,9 +271,9 @@ elif (args.data == 'wassem' or 'AG10K' or 'tweet50k'):
         tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
         tokenizer.cls_token = tokenizer.cls_token_id
         tokenizer.pad_token = tokenizer.eos_token
-        from gpt2 import GPT2_clf
+        from gpt2 import GPT2_multiclass_clf
 
-        model = GPT2_clf.from_pretrained(model_name,
+        model = GPT2_multiclass_clf.from_pretrained(model_name,
                                          num_labels=NUM_LABELS,
                                          output_attentions=False,
                                          output_hidden_states=False,
@@ -276,7 +292,7 @@ print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable pa
 
 ############################ Model and Tokenizer all set up
 params = list(model.named_parameters())
-
+print('The model has {:} different named parameters.\n'.format(len(params)))
 
 
 print('==== Embedding Layer ====\n')
@@ -325,61 +341,72 @@ for p in params[197:-4]:
     print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
 print('\n==== Output Layer ====\n')
-
 for p in params[-4:]:
     print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
 
-
-def freeze_layer_fun(freeze_layers_start, freeze_layers_end):
-    for name, param in params[freeze_layers_start : freeze_layers_end]:
+def freeze_layer_fun(freeze_layers_start):
+    print('')
+    print(f'============== before this freezing, the model has {count_parameters(model):,} trainable parameters')
+    print(' the frozen parameters are:')
+    for name, param in params[freeze_layers_start : freeze_layers_start + 16]:
         print(name)
         param.requires_grad = False
+    print(f' after this freezing, the model has {count_parameters(model):,} trainable parameters')
 
 
-print('The model has {:} different named parameters.\n'.format(len(params)))
-print(f'The model (before freezing) has {count_parameters(model):,} trainable parameters')
 
-if args.freeze == 'freeze_T1':
-    freeze_layer_fun(5, 21)
-elif args.freeze == 'freeze_T2':
-    freeze_layer_fun(21, 37)
-elif args.freeze == 'freeze_T3':
-    freeze_layer_fun(37, 53)
-elif args.freeze == 'freeze_T4':
-    freeze_layer_fun(53, 69)
-elif args.freeze == 'freeze_T5':
-    freeze_layer_fun(69, 85)
-elif args.freeze == 'freeze_T6':
-    freeze_layer_fun(85, 101)
-elif args.freeze == 'freeze_T7':
-    freeze_layer_fun(101, 117)
-elif args.freeze == 'freeze_T8':
-    freeze_layer_fun(117, 133)
-elif args.freeze == 'freeze_T9':
-    freeze_layer_fun(133, 149)
-elif args.freeze == 'freeze_T10':
-    freeze_layer_fun(149, 165)
-elif args.freeze == 'freeze_T11':
-    freeze_layer_fun(165, 181)
-elif args.freeze == 'freeze_T12':
-    freeze_layer_fun(181, 197)
-elif args.freeze == 'freeze_T13':
-    freeze_layer_fun(69, 85)
-elif args.freeze == 'attention_per_transformer':
-    freeze_layer_fun(5, 15)
-    freeze_layer_fun(21, 31)
-    freeze_layer_fun(37, 47)
-    freeze_layer_fun(53, 63)
-    freeze_layer_fun(69, 79)
-    freeze_layer_fun(85, 95)
-    freeze_layer_fun(101, 111)
-    freeze_layer_fun(117, 127)
-    freeze_layer_fun(133, 143)
-    freeze_layer_fun(149, 159)
-    freeze_layer_fun(165, 175)
-    freeze_layer_fun(181, 191)
+# for bert and roberta
+for freeze in args.freeze:
+    if freeze == 'freeze_T1':
+        freeze_layer_fun(5)
+    elif freeze == 'freeze_T2':
+        freeze_layer_fun(21)
+    elif freeze == 'freeze_T3':
+        freeze_layer_fun(37)
+    elif freeze == 'freeze_T4':
+        freeze_layer_fun(53)
+    elif freeze == 'freeze_T5':
+        freeze_layer_fun(69)
+    elif freeze == 'freeze_T6':
+        freeze_layer_fun(85)
+    elif freeze == 'freeze_T7':
+        freeze_layer_fun(101)
+    elif freeze == 'freeze_T8':
+        freeze_layer_fun(117)
+    elif freeze == 'freeze_T9':
+        freeze_layer_fun(133)
+    elif freeze == 'freeze_T10':
+        freeze_layer_fun(149)
+    elif freeze == 'freeze_T11':
+        freeze_layer_fun(165)
+    elif freeze == 'freeze_T12':
+        freeze_layer_fun(181)
+    else:
+        pass
 
+def freeze_attention(freeze_layers_start):
+    for name, param in params[freeze_layers_start : freeze_layers_start + 10]:
+        print('the frozen parameters are:', name)
+        param.requires_grad = False
+        print('after this frozen, thera are {} trainable parameters'.format(count_parameters(model)))
+
+if args.freeze_attention:
+    if (('Bert' in model_name) or ('bert' in model_name)):
+        freeze_layer_fun(5, 15)
+        freeze_layer_fun(21, 31)
+        freeze_layer_fun(37, 47)
+        freeze_layer_fun(53, 63)
+        freeze_layer_fun(69, 79)
+        freeze_layer_fun(85, 95)
+        freeze_layer_fun(101, 111)
+        freeze_layer_fun(117, 127)
+        freeze_layer_fun(133, 143)
+        freeze_layer_fun(149, 159)
+        freeze_layer_fun(165, 175)
+        freeze_layer_fun(181, 191)
+    else:
+        pass
 else:
     pass
 
@@ -552,8 +579,8 @@ scheduler = get_linear_schedule_with_warmup(optimizer,
                                             num_training_steps=total_steps)
 
 
-if args.saved_lm_model != None:
-    resultname = str(args.saved_lm_model)
+if args.FTModel != None:
+    resultname = str(args.FTModel)
 else:
     resultname = str(args.BertModel) + '_' + str(args.data)
 
