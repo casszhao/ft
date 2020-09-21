@@ -352,6 +352,10 @@ def freeze_layer_fun(freeze_layers_start):
         for name, param in params[freeze_layers_start : freeze_layers_start + 8]:
             print(name)
             param.requires_grad = False
+    elif 'gpt2' in model_name:
+        for name, param in params[freeze_layers_start : freeze_layers_start + 12]:
+            print(name)
+            param.requires_grad = False
     else:
         print('not defined')
     print(f' after this freezing, the model has {count_parameters(model):,} trainable parameters')
@@ -403,6 +407,34 @@ if args.freeze != None:
                 freeze_layer_fun(37)
             elif freeze == 'freeze_T6':
                 freeze_layer_fun(45)
+            else:
+                pass
+    elif 'gpt2' in model_name:
+        for freeze in args.freeze:
+            if freeze == 'freeze_T1':
+                freeze_layer_fun(2)
+            elif freeze == 'freeze_T2':
+                freeze_layer_fun(14)
+            elif freeze == 'freeze_T3':
+                freeze_layer_fun(26)
+            elif freeze == 'freeze_T4':
+                freeze_layer_fun(38)
+            elif freeze == 'freeze_T5':
+                freeze_layer_fun(50)
+            elif freeze == 'freeze_T6':
+                freeze_layer_fun(62)
+            elif freeze == 'freeze_T7':
+                freeze_layer_fun(74)
+            elif freeze == 'freeze_T8':
+                freeze_layer_fun(86)
+            elif freeze == 'freeze_T9':
+                freeze_layer_fun(98)
+            elif freeze == 'freeze_T10':
+                freeze_layer_fun(110)
+            elif freeze == 'freeze_T11':
+                freeze_layer_fun(122)
+            elif freeze == 'freeze_T12':
+                freeze_layer_fun(134)
             else:
                 pass
 else:
