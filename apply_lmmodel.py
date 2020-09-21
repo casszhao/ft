@@ -43,7 +43,6 @@ parser.add_argument('--freeze', type=str, help='define which layers to freeze', 
 parser.add_argument('--freeze_attention', action='store_true', help='freeze attention')
 # 4
 
-# 5
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
 
@@ -336,12 +335,8 @@ for p in params[165:181]:
 print('\n==== Transformer 11====\n')
 for p in params[181:197]:
     print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer NNNNN====\n')
-for p in params[197:-4]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-
 print('\n==== Output Layer ====\n')
-for p in params[-4:]:
+for p in params[197:]:
     print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
 
@@ -349,41 +344,69 @@ def freeze_layer_fun(freeze_layers_start):
     print('')
     print(f'============== before this freezing, the model has {count_parameters(model):,} trainable parameters')
     print(' the frozen parameters are:')
-    for name, param in params[freeze_layers_start : freeze_layers_start + 16]:
-        print(name)
-        param.requires_grad = False
+    if (('Bert' in model_name) or ('bert' in model_name)):
+        for name, param in params[freeze_layers_start : freeze_layers_start + 16]:
+            print(name)
+            param.requires_grad = False
+    elif (('XLM' in model_name) or ('xlm' in model_name)):
+        for name, param in params[freeze_layers_start : freeze_layers_start + 8]:
+            print(name)
+            param.requires_grad = False
+    else:
+        print('not defined')
     print(f' after this freezing, the model has {count_parameters(model):,} trainable parameters')
 
 
+if args.freeze != None:
 
-# for bert and roberta
-for freeze in args.freeze:
-    if freeze == 'freeze_T1':
-        freeze_layer_fun(5)
-    elif freeze == 'freeze_T2':
-        freeze_layer_fun(21)
-    elif freeze == 'freeze_T3':
-        freeze_layer_fun(37)
-    elif freeze == 'freeze_T4':
-        freeze_layer_fun(53)
-    elif freeze == 'freeze_T5':
-        freeze_layer_fun(69)
-    elif freeze == 'freeze_T6':
-        freeze_layer_fun(85)
-    elif freeze == 'freeze_T7':
-        freeze_layer_fun(101)
-    elif freeze == 'freeze_T8':
-        freeze_layer_fun(117)
-    elif freeze == 'freeze_T9':
-        freeze_layer_fun(133)
-    elif freeze == 'freeze_T10':
-        freeze_layer_fun(149)
-    elif freeze == 'freeze_T11':
-        freeze_layer_fun(165)
-    elif freeze == 'freeze_T12':
-        freeze_layer_fun(181)
-    else:
-        pass
+    if (('Bert' in model_name) or ('bert' in model_name)):
+    # for bert and roberta
+        for freeze in args.freeze:
+            if freeze == 'freeze_T1':
+                freeze_layer_fun(5)
+            elif freeze == 'freeze_T2':
+                freeze_layer_fun(21)
+            elif freeze == 'freeze_T3':
+                freeze_layer_fun(37)
+            elif freeze == 'freeze_T4':
+                freeze_layer_fun(53)
+            elif freeze == 'freeze_T5':
+                freeze_layer_fun(69)
+            elif freeze == 'freeze_T6':
+                freeze_layer_fun(85)
+            elif freeze == 'freeze_T7':
+                freeze_layer_fun(101)
+            elif freeze == 'freeze_T8':
+                freeze_layer_fun(117)
+            elif freeze == 'freeze_T9':
+                freeze_layer_fun(133)
+            elif freeze == 'freeze_T10':
+                freeze_layer_fun(149)
+            elif freeze == 'freeze_T11':
+                freeze_layer_fun(165)
+            elif freeze == 'freeze_T12':
+                freeze_layer_fun(181)
+            else:
+                pass
+
+    elif (('XLM' in model_name) or ('xlm' in model_name)):
+        for freeze in args.freeze:
+            if freeze == 'freeze_T1':
+                freeze_layer_fun(5)
+            elif freeze == 'freeze_T2':
+                freeze_layer_fun(13)
+            elif freeze == 'freeze_T3':
+                freeze_layer_fun(21)
+            elif freeze == 'freeze_T4':
+                freeze_layer_fun(29)
+            elif freeze == 'freeze_T5':
+                freeze_layer_fun(37)
+            elif freeze == 'freeze_T6':
+                freeze_layer_fun(45)
+            else:
+                pass
+else:
+    pass
 
 def freeze_attention(freeze_layers_start):
     for name, param in params[freeze_layers_start : freeze_layers_start + 10]:
