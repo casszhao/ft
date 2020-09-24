@@ -2,6 +2,8 @@
 
 from transformers import BertPreTrainedModel, BertModel
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 import time
 from transformers import AdamW
@@ -494,6 +496,7 @@ loss_values = []
 
 # For each epoch...
 def train_ensemble(H_Bert, H_XLM, dataloader):
+    train_loss = 0
     from transformers import get_linear_schedule_with_warmup
     optimizer_Bert = AdamW(H_Bert.parameters(), lr=5e-5, eps=1e-8)
     optimizer_XLM = AdamW(H_XLM.parameters(), lr=5e-5, eps=1e-8)
@@ -545,13 +548,14 @@ def train_ensemble(H_Bert, H_XLM, dataloader):
         logits = nn.Linear(pooled.shape[1], 6)(pooled)
 
         loss_fct = nn.BCEWithLogitsLoss()  # .to(device)
-        loss = loss_fct(logits, labels)
+        loss = loss_fct(logits, b_labels)
 
         loss.backward()
 
         # Clip the norm of the gradients to 1.0.
         # This is to help prevent the "exploding gradients" problem.
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        torch.nn.utils.clip_grad_norm_(H_Bert.parameters(), 1.0)
+        torch.nn.utils.clip_grad_norm_(H_XLM.parameters(), 1.0)
         optimizer_XLM.step()
         optimizer_Bert.step()
         scheduler_XLM.step()
@@ -563,8 +567,9 @@ def train_ensemble(H_Bert, H_XLM, dataloader):
 
 def validate_ensemble(H_Bert, H_XLM, dataloader):
     print(" === Validation ===")
-    model.eval()
-    valid_loss, f1_micro_total = 0, 0
+    H_Bert.eval()
+    H_XLM.eval()
+    valid_loss, f1_macro_total = 0, 0
 
     for step, batch in enumerate(dataloader):
         batch = tuple(t.to(device) for t in batch)
@@ -585,7 +590,7 @@ def validate_ensemble(H_Bert, H_XLM, dataloader):
                                labels=b_labels,
                                )
 
-        Hidden = torch.cat((Hidden_Bert, Hidden_XLM), dim=1)
+        Hidden = torch.cat((Hidden_Bert, Hidden_XLM), dim=2)
         Hidden = nn.Dropout(0.1)(Hidden).permute(0, 2, 1)
         pooled = F.max_pool1d(Hidden, Hidden.shape[2]).squeeze(2)
         logits = nn.Linear(pooled.shape[1], 6)(pooled)
@@ -596,10 +601,11 @@ def validate_ensemble(H_Bert, H_XLM, dataloader):
         labels = b_labels.to('cpu').numpy()
         f1_macro = f1_score(labels, prediction, average='macro', zero_division=1)
         f1_macro_total += f1_macro
-
+        loss_fct = nn.BCEWithLogitsLoss()  # .to(device)
+        loss = loss_fct(logits, b_labels)
         valid_loss += loss
 
-    return valid_loss / len(dataloader), f1_micro_total / len(dataloader)
+    return valid_loss / len(dataloader), f1_macro_total / len(dataloader)
 
 
 
@@ -607,6 +613,7 @@ for epoch_i in range(0, epochs):
     print("")
     print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
     t0 = time.time()
+
     train_loss = train_ensemble(H_Bert, H_XLM, train_dataloader)
     print("  Training epcoh took: {:}".format(format_time(time.time() - t0)))
     print("")
@@ -626,7 +633,7 @@ prediction_data = TensorDataset(test_inputs, test_masks, test_labels)
 prediction_sampler = SequentialSampler(prediction_data)
 prediction_dataloader = DataLoader(prediction_data, sampler=prediction_sampler, batch_size=batch_size, shuffle = False)
 
-model.eval()
+
 
 predictions = torch.Tensor().to(device)
 
@@ -647,11 +654,24 @@ if args.data == 'multi-label':
         b_input_ids, b_input_mask, b_labels = batch
 
         with torch.no_grad():
-            # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
-            outputs = model(b_input_ids.long(), token_type_ids=None,
-                            attention_mask=b_input_mask)  # return: loss(only if label is given), logit
-        #logits = outputs
-        rounded_preds = torch.round(torch.sigmoid(outputs))
+            Hidden_Bert = H_Bert(b_input_ids,
+                                 token_type_ids=None,
+                                 attention_mask=b_input_mask,
+                                 labels=b_labels,
+                                 )
+
+            Hidden_XLM = H_XLM(b_input_ids,
+                               token_type_ids=None,
+                               attention_mask=b_input_mask,
+                               labels=b_labels,
+                               )
+
+        Hidden = torch.cat((Hidden_Bert, Hidden_XLM), dim=2)
+        Hidden = nn.Dropout(0.1)(Hidden).permute(0, 2, 1)
+        pooled = F.max_pool1d(Hidden, Hidden.shape[2]).squeeze(2)
+        logits = nn.Linear(pooled.shape[1], 6)(pooled)
+
+        rounded_preds = torch.round(torch.sigmoid(logits))
         predictions = torch.cat((predictions, rounded_preds))  #rounded_preds.float()
         labels = torch.cat((labels, b_labels.float()))
     print(' prediction    DONE.')
