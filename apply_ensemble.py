@@ -647,11 +647,10 @@ def clean_dataset(df):
 if args.data == 'multi-label':
     labels = torch.Tensor().to(device)
     for batch in prediction_dataloader:
-        # Add batch to GPU
         batch = tuple(t.to(device) for t in batch)
-
-        # Unpack the inputs from our dataloader
-        b_input_ids, b_input_mask, b_labels = batch
+        b_input_ids = batch[0].long()
+        b_input_mask = batch[1].long()
+        b_labels = batch[2].float()
 
         with torch.no_grad():
             Hidden_Bert = H_Bert(b_input_ids,

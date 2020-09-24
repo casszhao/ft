@@ -358,7 +358,7 @@ class Bert_hidden(BertPreTrainedModel):
             token_type_ids=token_type_ids,
             position_ids=position_ids,
             head_mask=head_mask,
-            inputs_embeds=inputs_embeds,
+            #inputs_embeds=inputs_embeds,
         )
         # 0: last_hidden_state
         # 1: pooler_output
