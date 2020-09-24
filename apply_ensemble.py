@@ -712,7 +712,7 @@ if args.data == 'multi-label':
     print("f1_insult:", f1_insult)
     print("f1_identity_hate:", f1_identity_hate)
     print("macro F1:", (f1_toxic + f1_severe_toxic + f1_obscene + f1_threat + f1_insult + f1_identity_hate)/6)
-    result.to_csv(str(args.resultpath) + model_name +str(args.freeze) + '_result.csv', sep='\t')
+    result.to_csv(str(args.resultpath) + '_result.csv', sep='\t')
 
 else:
     for batch in prediction_dataloader:
