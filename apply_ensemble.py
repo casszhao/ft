@@ -497,6 +497,8 @@ loss_values = []
 # For each epoch...
 def train_ensemble(H_Bert, H_XLM, dataloader):
     train_loss = 0
+    H_Bert.to(device)
+    H_XLM.to(device)
     from transformers import get_linear_schedule_with_warmup
     optimizer_Bert = AdamW(H_Bert.parameters(), lr=5e-5, eps=1e-8)
     optimizer_XLM = AdamW(H_XLM.parameters(), lr=5e-5, eps=1e-8)
@@ -567,6 +569,8 @@ def train_ensemble(H_Bert, H_XLM, dataloader):
 
 def validate_ensemble(H_Bert, H_XLM, dataloader):
     print(" === Validation ===")
+    H_Bert.to(device)
+    H_XLM.to(device)
     H_Bert.eval()
     H_XLM.eval()
     valid_loss, f1_macro_total = 0, 0
