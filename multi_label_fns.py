@@ -332,6 +332,168 @@ class XLM_clf(XLMPreTrainedModel):
         return output
 
 
+class Bert_hidden(BertPreTrainedModel):
+    def __init__(self, config):
+        super().__init__(config)
+        self.num_labels = config.num_labels
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.init_weights()
+
+    def forward(
+            self,
+            input_ids=None,
+            attention_mask=None,
+            token_type_ids=None,
+            position_ids=None,
+            head_mask=None,
+            inputs_embeds=None,
+            labels=None,
+            output_attentions=None,
+    ):
+        outputs = self.bert(
+            input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+        )
+        # 0: last_hidden_state
+        # 1: pooler_output
+        # 2: hidden_states (one for the output of the embeddings + one for the output of each layer)
+        #                  of shape (batch_size, sequence_length, hidden_size).
+        # 3: attentions
+
+        return outputs[0]  # (loss), logits
+
+
+class XLM_hidden(XLMPreTrainedModel):
+    def __init__(self, config):
+        super().__init__(config)
+        self.num_labels = config.num_labels
+        self.transformer = XLMModel(config)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.init_weights()
+        self.dropout = nn.Dropout(0.1)
+
+    def forward(
+        self,
+        input_ids=None,
+        attention_mask=None,
+        langs=None,
+        token_type_ids=None,
+        position_ids=None,
+        lengths=None,
+        cache=None,
+        head_mask=None,
+        inputs_embeds=None,
+        labels=None,
+        output_attentions=None,
+    ):
+        outputs = self.transformer(
+            input_ids,
+            attention_mask=attention_mask,
+            langs=langs,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            lengths=lengths,
+            cache=cache,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+        )
+        # 0. last_hidden_state size: [batch_size, sequence_length, hidden_size]
+        # 1. hidden_states
+        #    (output of the embeddings + output of each layer) size: [batch_size, sequence_length, hidden_size]
+        # 2. attentions
+
+        return outputs[0]
+
+
+class Ensemble_clf(BertPreTrainedModel, XLMPreTrainedModel):
+    def __init__(self, config):
+        BertPreTrainedModel.__init__(config)
+        XLMPreTrainedModel.__init__(config)
+        self.num_labels = BertPreTrainedModel.config.num_labels
+        self.bert = BertModel(config)
+
+        self.classifier = nn.Linear(BertPreTrainedModel.config.hidden_size + XLMPreTrainedModel.config.hidden_size, config.num_labels)
+        self.init_weights()
+
+        #self.num_labels = config.num_labels
+        self.transformer = XLMModel(config)
+        self.init_weights()
+
+        self.dropout = nn.Dropout(0.1)
+
+    def forward(
+            self,
+            input_ids=None,
+            attention_mask=None,
+            token_type_ids=None,
+            position_ids=None,
+            head_mask=None,
+            inputs_embeds=None,
+            labels=None,
+            output_attentions=None,
+            langs=None,
+    ):
+
+        xlm_outputs = self.transformer(
+            input_ids,
+            attention_mask=attention_mask,
+            langs=langs,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            lengths=lengths,
+            cache=cache,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+        )
+            # 0. last_hidden_state size: [batch_size, sequence_length, hidden_size]
+            # 1. hidden_states
+            #    (output of the embeddings + output of each layer) size: [batch_size, sequence_length, hidden_size]
+            # 2. attentions
+
+        xlm_last_hidden_state = outputs[0]
+
+
+        bert_outputs = self.bert(
+            input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+        )
+        # 0: last_hidden_state
+        # 1: pooler_output
+        # 2: hidden_states (one for the output of the embeddings + one for the output of each layer)
+        #                  of shape (batch_size, sequence_length, hidden_size).
+        # 3: attentions
+
+        bert_last_hidden_state = bert_outputs[0] #[batch_size, sequence_length, hidden_size]
+
+        cat_hidden_state = torch.cat((bert_last_hidden_state, xlm_last_hidden_state), dim = 1) #[batch_size, sequence_length, hidden_size_1 + hiddent_size_2]
+
+        cat_hidden_state = self.dropout(cat_hidden_state).permute(0, 2, 1)
+            # [16, 100, hidden 1 + hidden 2] permute --> [16, hidden 1 + hidden 2, 100]
+        pooled = F.max_pool1d(cat_hidden_state, cat_hidden_state.shape[2]).squeeze(2)
+            # [16, 256]
+        logits = self.classifier(pooled)
+
+
+        if labels is not None:
+            loss_fct = nn.BCEWithLogitsLoss()#.to(device)
+            loss = loss_fct(logits, labels)
+            output = (loss, logits)
+        else:
+            output = logits
+
+        return output  # (loss), logits
+
+
 ### functions not models
 
 def validate_multilable(model, dataloader):
