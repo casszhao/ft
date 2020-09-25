@@ -542,14 +542,14 @@ def train_ensemble(H_Bert, H_XLM, dataloader):
                              labels=b_labels,
                              )
 
-        Hidden = torch.cat((Hidden_Bert, Hidden_XLM), dim = 2)
+        Hidden = torch.cat((Hidden_Bert, Hidden_XLM), dim = 2).to(device)
 
-        Hidden = nn.Dropout(0.1)(Hidden).permute(0, 2, 1)
+        Hidden = nn.Dropout(0.1)(Hidden).permute(0, 2, 1).to(device)
 
-        pooled = F.max_pool1d(Hidden, Hidden.shape[2]).squeeze(2)
-        logits = nn.Linear(pooled.shape[1], 6)(pooled)
+        pooled = F.max_pool1d(Hidden, Hidden.shape[2]).squeeze(2).to(device)
+        logits = nn.Linear(pooled.shape[1], 6).to(device)(pooled)
 
-        loss_fct = nn.BCEWithLogitsLoss()  # .to(device)
+        loss_fct = nn.BCEWithLogitsLoss().to(device)  # .to(device)
         loss = loss_fct(logits, b_labels)
 
         loss.backward()
