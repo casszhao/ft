@@ -597,10 +597,10 @@ def validate_ensemble(H_Bert, H_XLM, dataloader):
         Hidden = torch.cat((Hidden_Bert, Hidden_XLM), dim=2)
         Hidden = nn.Dropout(0.1)(Hidden).permute(0, 2, 1)
         pooled = F.max_pool1d(Hidden, Hidden.shape[2]).squeeze(2)
-        logits = nn.Linear(pooled.shape[1], 6)(pooled)
+        logits = nn.Linear(pooled.shape[1], 6).to(device)(pooled)
 
-        rounded_preds = torch.round(torch.sigmoid(logits))  # (batch size, 6)
-        prediction = rounded_preds.detach().cpu().numpy()
+        rounded_preds = torch.round(torch.sigmoid(logits)).to(device)  # (batch size, 6)
+        prediction = rounded_preds.detach().cpu().numpy().to(device)
 
         labels = b_labels.to('cpu').numpy()
         f1_macro = f1_score(labels, prediction, average='macro', zero_division=1)
