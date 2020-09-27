@@ -600,7 +600,7 @@ def validate_ensemble(H_Bert, H_XLM, dataloader):
         logits = nn.Linear(pooled.shape[1], 6).to(device)(pooled)
 
         rounded_preds = torch.round(torch.sigmoid(logits)).to(device)  # (batch size, 6)
-        prediction = rounded_preds.detach().cpu().numpy().to(device)
+        prediction = rounded_preds.detach().cpu().numpy()
 
         labels = b_labels.to('cpu').numpy()
         f1_macro = f1_score(labels, prediction, average='macro', zero_division=1)
