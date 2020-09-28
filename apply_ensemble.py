@@ -672,7 +672,7 @@ if args.data == 'multi-label':
         Hidden = torch.cat((Hidden_Bert, Hidden_XLM), dim=2)
         Hidden = nn.Dropout(0.1)(Hidden).permute(0, 2, 1)
         pooled = F.max_pool1d(Hidden, Hidden.shape[2]).squeeze(2)
-        logits = nn.Linear(pooled.shape[1], 6)(pooled)
+        logits = nn.Linear(pooled.shape[1], 6).to(device)(pooled)
 
         rounded_preds = torch.round(torch.sigmoid(logits))
         predictions = torch.cat((predictions, rounded_preds))  #rounded_preds.float()
