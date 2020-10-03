@@ -58,7 +58,7 @@ elif args.data == 'AG10K':
 else:
     NUM_LABELS = 4
 
-batch_size = 16
+batch_size = 2048
 epochs = args.epochs
 
 
@@ -67,9 +67,9 @@ test_path = str(args.data) + '_test.csv'
 validation_path = str(args.data) + '_validation.csv'
 
 if args.testing:
-    train = pd.read_csv(train_path).sample(10)
-    test = pd.read_csv(test_path).sample(10).reset_index()
-    validation = pd.read_csv(validation_path).sample(10).dropna()
+    train = pd.read_csv(train_path).sample(2055)
+    test = pd.read_csv(test_path).sample(2055).reset_index()
+    validation = pd.read_csv(validation_path).dropna()
 elif args.running:
     train = pd.read_csv(train_path)
     test = pd.read_csv(test_path).reset_index()
@@ -628,11 +628,11 @@ def metrics(rounded_preds, label):
 '''
 ================== Training Loop =======================
 '''
-optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
+optimizer = AdamW(model.parameters(), lr=0.0005, weight_decay = 0.01, eps = 1e-6)
 from transformers import get_linear_schedule_with_warmup
 total_steps = len(train_dataloader) * epochs
 scheduler = get_linear_schedule_with_warmup(optimizer,
-                                            num_warmup_steps=0,  # Default value in run_glue.py
+                                            num_warmup_steps= int(total_steps*0.06),  # Default value in run_glue.py
                                             num_training_steps=total_steps)
 
 
@@ -752,7 +752,7 @@ else:
             # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
             outputs = model(b_input_ids.long(), token_type_ids=None,
                             attention_mask=b_input_mask)  # return: loss(only if label is given), logit
-        #logits = outputs[0]
+        logits = outputs[0]
         softmax = torch.nn.functional.softmax(outputs, dim=1)
         prediction = softmax.argmax(dim=1)
         predictions = torch.cat((predictions, prediction.float()))
