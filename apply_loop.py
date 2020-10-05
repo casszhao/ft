@@ -313,7 +313,7 @@ train_path = './data/' + str(args.data) + '.csv'
 if args.testing:
     data = pd.read_csv(train_path, names = ['id', 'comment', 'label']).sample(500)
 elif args.running:
-    data = pd.read_csv(train_path, name = ['id', 'comment', 'label'])
+    data = pd.read_csv(train_path, names = ['id', 'comment', 'label'])
 else:
     print('need to define parameter, it is "--running" or "--testing"')
 
