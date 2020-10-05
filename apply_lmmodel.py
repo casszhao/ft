@@ -58,7 +58,7 @@ elif args.data == 'AG10K':
 else:
     NUM_LABELS = 4
 
-batch_size = 2048
+batch_size = 16
 epochs = args.epochs
 
 
@@ -67,8 +67,8 @@ test_path = str(args.data) + '_test.csv'
 validation_path = str(args.data) + '_validation.csv'
 
 if args.testing:
-    train = pd.read_csv(train_path).sample(2055)
-    test = pd.read_csv(test_path).sample(2055).reset_index()
+    train = pd.read_csv(train_path).sample(20)
+    test = pd.read_csv(test_path).sample(20).reset_index()
     validation = pd.read_csv(validation_path).dropna()
 elif args.running:
     train = pd.read_csv(train_path)
