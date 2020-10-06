@@ -40,8 +40,6 @@ group = parser.add_mutually_exclusive_group()
 group.add_argument('--running', action='store_true', help='running using the original big dataset')
 group.add_argument('--testing', action='store_true', help='testing')
 # 3
-parser.add_argument('--freeze', type=str, help='define which layers to freeze', nargs='+')
-parser.add_argument('--freeze_attention', action='store_true', help='freeze attention')
 # 4
 
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
@@ -118,60 +116,46 @@ validation_labels = torch.tensor(labels_validation).to(device)
 
 
 
-if args.BertModel == 'Bert':
-    model_name = 'bert-base-cased'
-elif args.BertModel == 'RoBerta':
-    model_name = 'roberta-base'
-elif args.BertModel == 'XLM':
-    model_name = 'xlm-mlm-enfr-1024'
-elif args.BertModel == 'gpt2':
-    model_name = 'gpt2'
-else:
-    print('the model name is not set up, it should be from a pretrained model file(as args.FTModel) or '
-      'bert-base-cased or roberta-base or xlm-mlm-enfr-1024')
 
-
-if (('RoBerta' in model_name) or ('roberta' in model_name)):
-
+if args.BertModel == 'RoBerta':
     from transformers import RobertaTokenizer, RobertaForSequenceClassification, RobertaConfig
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
-    model = RobertaForSequenceClassification.from_pretrained(model_name,
+    model = RobertaForSequenceClassification.from_pretrained('roberta-base',
                                                              num_labels=NUM_LABELS,
                                                              output_attentions=False,
                                                              output_hidden_states=False)
     print(' ')
-    print('using Roberta:', model_name)
+    print('using Roberta:')
 
-elif (('Bert' in model_name) or ('bert' in model_name)):
+elif args.BertModel == 'Bert':
     from transformers import BertTokenizer, BertForSequenceClassification
     tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-    model = BertForSequenceClassification.from_pretrained(model_name,
+    model = BertForSequenceClassification.from_pretrained('bert-base-cased',
                                                           num_labels=NUM_LABELS,
                                                           output_attentions=False,
                                                           output_hidden_states=False)
     print(' ')
-    print('using Bert:', model_name)
-    print(model)
+    print('using Bert:')
 
-elif (('XLM' in model_name) or ('xlm' in model_name)):
+elif args.BertModel == 'XLM':
     from transformers import XLMTokenizer, XLMForSequenceClassification, XLMConfig
     tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
-    model = XLMForSequenceClassification.from_pretrained(model_name,
+    model = XLMForSequenceClassification.from_pretrained('xlm-mlm-enfr-1024',
                                                          num_labels=NUM_LABELS,
                                                          output_attentions=False,
                                                          output_hidden_states=False,
                                                          )
     print(' ')
-    print('using XLM:', model_name)
+    print('using XLM:')
 
-elif 'gpt2' in model_name:
+elif args.BertModel == 'gpt2':
     from transformers import GPT2Tokenizer, GPT2PreTrainedModel, GPT2DoubleHeadsModel
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
     tokenizer.cls_token = tokenizer.cls_token_id
     tokenizer.pad_token = tokenizer.eos_token
     from gpt2 import GPT2_multiclass_clf
 
-    model = GPT2_multiclass_clf.from_pretrained(model_name,
+    model = GPT2_multiclass_clf.from_pretrained('gpt2',
                                      num_labels=NUM_LABELS,
                                      output_attentions=False,
                                      output_hidden_states=False,
