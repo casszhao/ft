@@ -72,6 +72,7 @@ elif args.running:
 else:
     print('need to define parameter, it is "--running" or "--testing"')
 
+print('training dataset size:  ', len(train))
 
 sentences_train = train.comment.values
 labels_train = train.label.values
@@ -303,6 +304,11 @@ def metrics(rounded_preds, label):
     macro_f1 = f1_score(label_array, pred_array, average='macro', zero_division=1)
     return micro_f1, macro_f1
 
+
+def flat_accuracy(preds, labels):
+    pred_flat = np.argmax(preds, axis=1).flatten()
+    labels_flat = labels.flatten()
+    return np.sum(pred_flat == labels_flat) / len(labels_flat)
 '''
 ================== Training Loop =======================
 '''
@@ -320,21 +326,117 @@ best_valid_loss = float('inf')
 loss_values = []
 
 # For each epoch...
-for epoch_i in range(0, epochs):
-    t0 = time.time()
-    print("")
-    print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
-    train_loss = train(model, train_dataloader)
+import random
 
+seed_val = 42
+
+random.seed(seed_val)
+np.random.seed(seed_val)
+torch.manual_seed(seed_val)
+torch.cuda.manual_seed_all(seed_val)
+
+# Store the average loss after each epoch so we can plot them.
+# loss_fn = nn.CrossEntropyLoss
+loss_values = []
+
+# For each epoch...
+for epoch_i in range(0, epochs):
+    print("")
+    print('======== Epoch {:} / {:} ========'.format(epoch_i + 1, epochs))
+    t0 = time.time()
+
+    total_loss = 0  # 计算每epoch的总loss
+    model.train()
+
+    # For each batch of training data...
+    for step, batch in enumerate(train_dataloader):
+        b_input_ids = batch[0].long().to(device)
+        b_input_mask = batch[1].long().to(device)
+        b_labels = batch[2].long().to(device)
+
+        optimizer.zero_grad()
+
+        outputs = model(b_input_ids,
+                        token_type_ids=None,
+                        attention_mask=b_input_mask,
+                        labels=b_labels)
+
+        # The call to `model` always returns a tuple, so we need to pull the
+        # loss value out of the tuple. loss only available when labels are given (e.g. in train mode)
+        loss = outputs[0]
+        total_loss += loss.item()
+
+        # Perform a backward pass to calculate the gradients.
+        loss.backward()
+
+        # Clip the norm of the gradients to 1.0.
+        # This is to help prevent the "exploding gradients" problem.
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        scheduler.step()
+
+    avg_train_loss = total_loss / len(train_dataloader)
+    loss_values.append(avg_train_loss)
+
+    print("")
+    print("  Average training loss: {0:.2f}".format(avg_train_loss))
+    print("  Training epcoh took: {:}".format(format_time(time.time() - t0)))
+
+    # ========================================
+    #               Validation
+    # ========================================
+    # each training epoch, measure validation set.
 
     print("")
     print("Running Validation...")
-    valid_loss, f1_micro = validate(model, validation_dataloader)
-    print('validation loss:', valid_loss)
-    print('f1_micro:', f1_micro)
-    print("  this epoch (training + validation) took: {:}".format(format_time(time.time() - t0)))
 
-#torch.save(model.state_dict(), str(args.resultpath) + resultname + '_model.pt')
+    t0 = time.time()
+
+    # Put the model in evaluation mode--the dropout layers behave differently
+    # during evaluation.
+    model.eval()
+
+    # Tracking variables
+    eval_loss, eval_accuracy = 0, 0
+    nb_eval_steps, nb_eval_examples = 0, 0
+
+    # Evaluate data for one epoch
+    for batch in validation_dataloader:
+        # Add batch to GPU
+        batch = tuple(t.to(device) for t in batch)
+
+        # Unpack the inputs from our dataloader
+        b_input_ids = batch[0].long()
+        b_input_mask = batch[1].long()
+        b_labels = batch[2].long()
+
+        with torch.no_grad():
+            outputs = model(b_input_ids,
+                            token_type_ids=None,
+                            attention_mask=b_input_mask)
+
+        # Get the "logits" output by the model. The "logits" are the output values prior to applying an activation function like the softmax.
+        logits = outputs[0]
+
+        # Move logits and labels to CPU
+        logits = logits.detach().cpu().numpy()
+        label_ids = b_labels.to('cpu').numpy()
+
+        # Calculate the accuracy for this batch of test sentences.
+        tmp_eval_accuracy = flat_accuracy(logits, label_ids)
+
+        # Accumulate the total accuracy.
+        eval_accuracy += tmp_eval_accuracy
+
+        # Track the number of batches
+        nb_eval_steps += 1
+
+    # Report the final accuracy for this validation run.
+    print("  Accuracy: {0:.2f}".format(eval_accuracy / nb_eval_steps))
+    print("  Validation took: {:}".format(format_time(time.time() - t0)))
+
+print("")
+print("Training complete!")
 
 print("")
 print("Training complete!")
@@ -346,13 +448,6 @@ prediction_dataloader = DataLoader(prediction_data, sampler=prediction_sampler, 
 model.eval()
 
 predictions = torch.Tensor().to(device)
-
-def clean_dataset(df):
-    assert isinstance(df, pd.DataFrame), "df needs to be a pd.DataFrame"
-    df.dropna(inplace=True)
-    indices_to_keep = ~df.isin([np.nan, np.inf, -np.inf]).any(1)
-    return df[indices_to_keep].astype(np.float64)
-
 
 for batch in prediction_dataloader:
     batch = tuple(t.to(device) for t in batch)
@@ -368,7 +463,7 @@ for batch in prediction_dataloader:
     prediction = softmax.argmax(dim=1)
     predictions = torch.cat((predictions, prediction.float()))
     # true_labels = torch.cat((true_labels, b_labels.float()))
-    print('    DONE.')
+print('    DONE.')
 predictions_np = predictions.cpu().tolist()
 test['prediction'] = predictions_np
 test['label_encoded'] = labels_test
