@@ -235,14 +235,6 @@ def train(model, dataloader):
     model.train()
     total_loss = 0
     for step, batch in enumerate(dataloader):
-
-        if step % 2000 == 0 and not step == 0:
-            # Calculate elapsed time in minutes.
-            elapsed = format_time(time.time() - t0)
-
-            # Report progress.
-            print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
-
         b_input_ids = batch[0].long().to(device)
         b_input_mask = batch[1].long().to(device)
         b_labels = batch[2].long().to(device)
@@ -261,7 +253,7 @@ def train(model, dataloader):
 
         loss.backward()
 
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        #torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         scheduler.step()
 
@@ -329,17 +321,18 @@ loss_values = []
 
 # For each epoch...
 for epoch_i in range(0, epochs):
+    t0 = time.time()
     print("")
     print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
-    t0 = time.time()
     train_loss = train(model, train_dataloader)
-    print("  Training epcoh took: {:}".format(format_time(time.time() - t0)))
+
+
     print("")
     print("Running Validation...")
-
-    t0 = time.time()
-    valid_loss = validate(model, validation_dataloader)
-    print("  Validation took: {:}".format(format_time(time.time() - t0)))
+    valid_loss, f1_micro = validate(model, validation_dataloader)
+    print('validation loss:', valid_loss)
+    print('f1_micro:', f1_micro)
+    print("  this epoch (training + validation) took: {:}".format(format_time(time.time() - t0)))
 
 #torch.save(model.state_dict(), str(args.resultpath) + resultname + '_model.pt')
 
@@ -362,29 +355,25 @@ def clean_dataset(df):
 
 
 for batch in prediction_dataloader:
-        batch = tuple(t.to(device) for t in batch)
+    batch = tuple(t.to(device) for t in batch)
+    b_input_ids, b_input_mask, b_labels = batch
 
-        b_input_ids, b_input_mask, b_labels = batch
-
-        with torch.no_grad():
-            # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
-            outputs = model(b_input_ids.long(), token_type_ids=None,
-                            attention_mask=b_input_mask)  # return: loss(only if label is given), logit
-        logits = outputs[0]
-        softmax = torch.nn.functional.softmax(logits, dim=1)
-        prediction = softmax.argmax(dim=1)
-        predictions = torch.cat((predictions, prediction.float()))
-        # true_labels = torch.cat((true_labels, b_labels.float()))
+    with torch.no_grad():
+        logits = model(b_input_ids.long(), token_type_ids=None, attention_mask=b_input_mask.long())
+    softmax = torch.nn.functional.softmax(logits, dim=1)
+    prediction = softmax.argmax(dim=1)
+    predictions = torch.cat((predictions, prediction.float()))
+    # true_labels = torch.cat((true_labels, b_labels.float()))
     print('    DONE.')
-    predictions_np = predictions.cpu().tolist()
-    test['prediction'] = predictions_np
-    test['label_encoded'] = labels_test
-    f1_micro = f1_score(test['label_encoded'], test['prediction'], average='micro')
-    f1_macro = f1_score(test['label_encoded'], test['prediction'], average='macro')
-    print('RESULTS -----------')
-    print(str(args.data))
-    print('f1_micro:', f1_micro)
-    print('f1_macro:', f1_macro)
-    print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
-    test.to_csv(str(resultname) + '_result.csv')
+predictions_np = predictions.cpu().tolist()
+test['prediction'] = predictions_np
+test['label_encoded'] = labels_test
+f1_micro = f1_score(test['label_encoded'], test['prediction'], average='micro')
+f1_macro = f1_score(test['label_encoded'], test['prediction'], average='macro')
+print('RESULTS -----------')
+print(str(args.data))
+print('f1_micro:', f1_micro)
+print('f1_macro:', f1_macro)
+print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
+test.to_csv(str(resultname) + '_result.csv')
 
