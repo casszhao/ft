@@ -359,8 +359,12 @@ for batch in prediction_dataloader:
     b_input_ids, b_input_mask, b_labels = batch
 
     with torch.no_grad():
-        logits = model(b_input_ids.long(), token_type_ids=None, attention_mask=b_input_mask.long())
-    softmax = torch.nn.functional.softmax(logits, dim=1)
+        output = model(b_input_ids.long(),
+                       token_type_ids=None,
+                       attention_mask=b_input_mask.long(),
+                       output_attentions = False,
+                       )
+    softmax = torch.nn.functional.softmax(output[0], dim=1)
     prediction = softmax.argmax(dim=1)
     predictions = torch.cat((predictions, prediction.float()))
     # true_labels = torch.cat((true_labels, b_labels.float()))
