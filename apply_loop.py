@@ -529,8 +529,8 @@ def one_loop(percent):
                 # Forward pass, calculate logit predictions, 没有给label, 所以不outputloss
                 outputs = model(b_input_ids.long(), token_type_ids=None,
                                 attention_mask=b_input_mask)  # return: loss(only if label is given), logit
-            logits = outputs[0]
-            softmax = torch.nn.functional.softmax(logits, dim=1)
+            #logits = outputs[0]
+            softmax = torch.nn.functional.softmax(outputs, dim=1)
             prediction = softmax.argmax(dim=1)
             predictions = torch.cat((predictions, prediction.float()))
             # true_labels = torch.cat((true_labels, b_labels.float()))
