@@ -173,120 +173,52 @@ else:
 print('model_name: ', model_name)
 
 
-if args.data == 'multi-label':
-    from multi_label_fns import validate_multilable, train_multilabel
 
-    if (('RoBerta' in model_name) or ('roberta' in model_name)):
-        from transformers import RobertaTokenizer, RobertaModel
-        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
-        from multi_label_fns import RoBerta_clf
-        model = RoBerta_clf.from_pretrained(model_name,
-                                            num_labels=NUM_LABELS,
-                                            output_attentions=False,
-                                            output_hidden_states=True)
-        print('using RoBerta:', model_name)
-        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-        print(model)
-
-    elif (('Bert' in model_name) or ('bert' in model_name)):
-        from transformers import BertTokenizer
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        from multi_label_fns import Bert_clf
-        model = Bert_clf.from_pretrained(model_name,
-                                         num_labels=NUM_LABELS,
-                                         output_attentions=False,
-                                         output_hidden_states=True)
-        print('using Bert:', model_name)
-        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-        print(model)
-
-    elif (('XLM' in model_name) or ('xlm' in model_name)):
-        from transformers import XLMTokenizer
-        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
-        from multi_label_fns import XLM_clf
-        model = XLM_clf.from_pretrained(model_name,
+if (('RoBerta' in model_name) or ('roberta' in model_name)):
+    from transformers import RobertaTokenizer, RobertaModel
+    tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
+    from multi_label_fns import RoBerta_clf
+    model = RoBerta_clf.from_pretrained(model_name,
                                         num_labels=NUM_LABELS,
                                         output_attentions=False,
                                         output_hidden_states=True)
-        print('using XLM:', model_name)
-        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-        print(model)
+    print('using RoBerta:', model_name)
 
-    elif 'gpt2' in model_name:
-        from transformers import GPT2Tokenizer, GPT2PreTrainedModel, GPT2DoubleHeadsModel
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
-        tokenizer.cls_token = tokenizer.cls_token_id
-        tokenizer.pad_token = tokenizer.eos_token
-        from gpt2 import GPT2_multilabel_clf
+elif (('Bert' in model_name) or ('bert' in model_name)):
+    from transformers import BertTokenizer
+    tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+    from multi_label_fns import Bert_clf
+    model = Bert_clf.from_pretrained(model_name,
+                                     num_labels=NUM_LABELS,
+                                     output_attentions=False,
+                                     output_hidden_states=True)
+    print('using Bert:', model_name)
 
-        model = GPT2_multilabel_clf.from_pretrained(model_name,
-                                         num_labels=NUM_LABELS,
-                                         output_attentions=False,
-                                         output_hidden_states=False,
-                                         use_cache=False,
-                                         )
-        print(' ')
-        print('using GPT2:', model_name)
+elif (('XLM' in model_name) or ('xlm' in model_name)):
+    from transformers import XLMTokenizer
+    tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
+    from multi_label_fns import XLM_clf
+    model = XLM_clf.from_pretrained(model_name,
+                                    num_labels=NUM_LABELS,
+                                    output_attentions=False,
+                                    output_hidden_states=True)
+    print('using XLM:', model_name)
 
-    else:
-        print('using multi-label data but need to define using which model using --BertModel or --FTModel')
+elif 'gpt2' in model_name:
+    from transformers import GPT2Tokenizer, GPT2PreTrainedModel, GPT2DoubleHeadsModel
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
+    tokenizer.cls_token = tokenizer.cls_token_id
+    tokenizer.pad_token = tokenizer.eos_token
+    from gpt2 import GPT2_multilabel_clf
 
-# multi-class
-elif (args.data == 'wassem' or 'AG10K' or 'tweet50k'):
-    print('multi-class classification')
-
-    if (('RoBerta' in model_name) or ('roberta' in model_name)):
-        from transformers import RobertaTokenizer, RobertaForSequenceClassification, RobertaConfig
-        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
-        model = RobertaForSequenceClassification.from_pretrained(model_name,
-                                                                 num_labels=NUM_LABELS,
-                                                                 output_attentions=False,
-                                                                 output_hidden_states=False)
-        print(' ')
-        print('using Roberta:', model_name)
-
-    elif (('Bert' in model_name) or ('bert' in model_name)):
-        from transformers import BertTokenizer, BertForSequenceClassification
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        model = BertForSequenceClassification.from_pretrained(model_name,
-                                                              num_labels=NUM_LABELS,
-                                                              output_attentions=False,
-                                                              output_hidden_states=False)
-        print(' ')
-        print('using Bert:', model_name)
-        print(model)
-
-    elif (('XLM' in model_name) or ('xlm' in model_name)):
-        from transformers import XLMTokenizer, XLMForSequenceClassification, XLMConfig
-        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
-        model = XLMForSequenceClassification.from_pretrained(model_name,
-                                                             num_labels=NUM_LABELS,
-                                                             output_attentions=False,
-                                                             output_hidden_states=False,
-                                                             )
-        print(' ')
-        print('using XLM:', model_name)
-
-    elif 'gpt2' in model_name:
-        from transformers import GPT2Tokenizer, GPT2PreTrainedModel, GPT2DoubleHeadsModel
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
-        tokenizer.cls_token = tokenizer.cls_token_id
-        tokenizer.pad_token = tokenizer.eos_token
-        from gpt2 import GPT2_multiclass_clf
-
-        model = GPT2_multiclass_clf.from_pretrained(model_name,
-                                         num_labels=NUM_LABELS,
-                                         output_attentions=False,
-                                         output_hidden_states=False,
-                                         use_cache=False,
-                                         )
-        print(' ')
-        print('using GPT2:', model_name)
-    else:
-        print('defined multi-class classification but the model fails settingup')
-
-else:
-    print('need to define using which dataset')
+    model = GPT2_multilabel_clf.from_pretrained(model_name,
+                                     num_labels=NUM_LABELS,
+                                     output_attentions=False,
+                                     output_hidden_states=False,
+                                     use_cache=False,
+                                     )
+    print(' ')
+    print('using GPT2:', model_name)
 
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 
@@ -316,10 +248,6 @@ elif args.running:
     data = pd.read_csv(train_path, names = ['id', 'comment', 'label'])
 else:
     print('need to define parameter, it is "--running" or "--testing"')
-
-
-
-
 
 
 
