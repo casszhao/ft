@@ -142,7 +142,11 @@ class Bert_clf(BertPreTrainedModel):
             print('need to define using [CLS] token or embedding to the nn.linear layer')
 
         if labels is not None:
-            loss_fct = nn.BCEWithLogitsLoss()#.to(device)
+            if len(labels.size()) > 1:
+                loss_fct = nn.BCEWithLogitsLoss()#.to(device)
+            else:
+                loss_fct = nn.CrossEntropyLoss()
+
             loss = loss_fct(logits, labels)
             output = (loss, logits)
         else:

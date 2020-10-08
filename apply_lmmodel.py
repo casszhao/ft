@@ -173,6 +173,60 @@ else:
 print('model_name: ', model_name)
 
 
+
+from multi_label_fns import validate_multilable, train_multilabel
+
+
+
+if (('RoBerta' in model_name) or ('roberta' in model_name)):
+    from transformers import RobertaTokenizer, RobertaModel
+    tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
+    from multi_label_fns import RoBerta_clf
+    model = RoBerta_clf.from_pretrained(model_name,
+                                        num_labels=NUM_LABELS,
+                                        output_attentions=False,
+                                        output_hidden_states=True)
+    print('using RoBerta:', model_name)
+
+elif (('Bert' in model_name) or ('bert' in model_name)):
+    from transformers import BertTokenizer
+    tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
+    from multi_label_fns import Bert_clf
+    model = Bert_clf.from_pretrained(model_name,
+                                     num_labels=NUM_LABELS,
+                                     output_attentions=False,
+                                     output_hidden_states=True)
+    print('using Bert:', model_name)
+
+elif (('XLM' in model_name) or ('xlm' in model_name)):
+    from transformers import XLMTokenizer
+    tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
+    from multi_label_fns import XLM_clf
+    model = XLM_clf.from_pretrained(model_name,
+                                    num_labels=NUM_LABELS,
+                                    output_attentions=False,
+                                    output_hidden_states=True)
+    print('using XLM:', model_name)
+
+elif 'gpt2' in model_name:
+    from transformers import GPT2Tokenizer, GPT2PreTrainedModel, GPT2DoubleHeadsModel
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
+    tokenizer.cls_token = tokenizer.cls_token_id
+    tokenizer.pad_token = tokenizer.eos_token
+    from gpt2 import GPT2_multilabel_clf
+
+    model = GPT2_multilabel_clf.from_pretrained(model_name,
+                                     num_labels=NUM_LABELS,
+                                     output_attentions=False,
+                                     output_hidden_states=False,
+                                     use_cache=False,
+                                     )
+    print(' ')
+    print('using GPT2:', model_name)
+
+'''
+
+
 if args.data == 'multi-label':
     from multi_label_fns import validate_multilable, train_multilabel
 
@@ -287,6 +341,7 @@ elif (args.data == 'wassem' or 'AG10K' or 'tweet50k'):
 
 else:
     print('need to define using which dataset')
+'''
 
 print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
 
@@ -536,6 +591,15 @@ validation_dataloader = DataLoader(validation_data, sampler=validation_sampler, 
 
 
 def train(model, dataloader):
+
+    from transformers import get_linear_schedule_with_warmup
+    optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
+    total_steps = len(dataloader) * epochs
+    scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                num_warmup_steps=0,  # Default value in run_glue.py
+                                                num_training_steps=total_steps)
+
+
     model.train()
     total_loss = 0
     for step, batch in enumerate(dataloader):
