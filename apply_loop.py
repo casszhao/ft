@@ -244,14 +244,14 @@ print('train path:', train_path)
 
 if args.data == 'AG10K':
     if args.testing:
-        data = pd.read_csv(train_path, names = ['id', 'comment', 'label']).sample(500)
+        data = pd.read_csv(train_path, names = ['id', 'comment', 'label']).sample(5000)
     elif args.running:
         data = pd.read_csv(train_path, names = ['id', 'comment', 'label'])
     else:
         print('need to define parameter, it is "--running" or "--testing"')
 else:
     if args.testing:
-        data = pd.read_csv(train_path).sample(500)
+        data = pd.read_csv(train_path).sample(5000)
     elif args.running:
         data = pd.read_csv(train_path)
     else:
@@ -449,7 +449,7 @@ def one_loop(percent):
 
         t0 = time.time()
         if args.data == 'multi-label':
-            valid_loss = validate_multilable(model, validation_dataloader)
+            valid_loss, micro_f1 = validate_multilable(model, validation_dataloader)
         else:
             valid_loss, micro_f1 = validate_multiclass(model, validation_dataloader)
         print("  Validation took: {:}".format(format_time(time.time() - t0)))
