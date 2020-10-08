@@ -239,15 +239,23 @@ model.to(device)
 
 # except AG10K having a validation set, other datasets need to be divided
 train_path = './data/' + str(args.data) + '.csv'
+print('train path:', train_path)
 
 
-
-if args.testing:
-    data = pd.read_csv(train_path, names = ['id', 'comment', 'label']).sample(500)
-elif args.running:
-    data = pd.read_csv(train_path, names = ['id', 'comment', 'label'])
+if args.data == 'AG10K':
+    if args.testing:
+        data = pd.read_csv(train_path, names = ['id', 'comment', 'label']).sample(500)
+    elif args.running:
+        data = pd.read_csv(train_path, names = ['id', 'comment', 'label'])
+    else:
+        print('need to define parameter, it is "--running" or "--testing"')
 else:
-    print('need to define parameter, it is "--running" or "--testing"')
+    if args.testing:
+        data = pd.read_csv(train_path).sample(500)
+    elif args.running:
+        data = pd.read_csv(train_path)
+    else:
+        print('need to define parameter, it is "--running" or "--testing"')
 
 
 
@@ -255,13 +263,19 @@ def one_loop(percent):
     if args.data == 'AG10K':
         train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
         validation = pd.read_csv('./data/' + str(args.data) + '_dev.csv', names=['id', 'comment', 'label']).dropna()
+    elif args.data == 'multi-label':
+        train, test = train_test_split(data, test_size=0.2, stratify=data['severe_toxic'])
+        test, validation = train_test_split(data, test_size=0.5, stratify=data['severe_toxic'])
     else:
         train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
         test, validation = train_test_split(data, test_size=0.5, stratify=data['label'])
 
     dispose_p = (100 - percent)/100
     print('--------------training dataset size: ', 1 - dispose_p)
-    train, dispose = train_test_split(data, test_size= dispose_p, stratify=data['label'])
+    if args.data == 'multi-label':
+        train, dispose = train_test_split(data, test_size=dispose_p, stratify=data['severe_toxic'])
+    else:
+        train, dispose = train_test_split(data, test_size= dispose_p, stratify=data['label'])
 
     if args.data == 'multi-label':
         sentences_train = train.comment_text.values
@@ -425,6 +439,7 @@ def one_loop(percent):
         print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
         t0 = time.time()
         if args.data == 'multi-label':
+            from multi_label_fns import train_multilabel, validate_multilable
             train_loss = train_multilabel(model, train_dataloader)
         else:
             train_loss = train_multiclass(model, train_dataloader, optimizer, scheduler)
