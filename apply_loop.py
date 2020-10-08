@@ -412,8 +412,6 @@ def one_loop(percent):
         validation_labels = torch.tensor(labels_validation).to(device)
 
 
-
-
     train_inputs = torch.Tensor()
     train_masks = torch.Tensor()
     for sent in sentences_train:
