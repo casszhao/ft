@@ -546,9 +546,11 @@ def one_loop(percent):
         print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
 
 # 5, 10, 15
+one_loop(99)
+'''
 for i in range(1, 20):
     percent = i*5
     print('---------------------------  percent:  ', percent)
     one_loop(percent)
-
+'''
 
