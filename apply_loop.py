@@ -253,7 +253,10 @@ else:
     if args.testing:
         data = pd.read_csv(train_path).sample(5000)
     elif args.running:
-        data = pd.read_csv(train_path)
+        if args.data == 'multi-label':
+            data = pd.read_csv(train_path, quoting=csv.QUOTE_NONE)
+        else:
+            data = pd.read_csv(train_path)
     else:
         print('need to define parameter, it is "--running" or "--testing"')
 
