@@ -230,13 +230,6 @@ model.to(device)
 
 
 
-
-
-
-
-
-
-
 # except AG10K having a validation set, other datasets need to be divided
 train_path = './data/' + str(args.data) + '.csv'
 print('train path:', train_path)
