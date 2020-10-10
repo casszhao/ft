@@ -194,7 +194,7 @@ else:
     train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
     test, validation = train_test_split(data, test_size=0.5, stratify=data['label'])
 
-
+'''
 percent = 99
 print('--------------training dataset size: ', percent/100)
 if args.data == 'multi-label':
@@ -202,7 +202,7 @@ if args.data == 'multi-label':
 else:
     train, dispose = train_test_split(data, train_size= percent/100, stratify=data['label'])
 print('training dataset size:', len(train))
-
+'''
 
 if args.data == 'multi-label':
     sentences_train = train.comment_text.values
