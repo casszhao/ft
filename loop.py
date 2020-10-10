@@ -179,10 +179,7 @@ else:
     if args.testing:
         data = pd.read_csv(train_path).sample(5000)
     elif args.running:
-        if args.data == 'multi-label':
-            data = pd.read_csv(train_path, quoting=csv.QUOTE_NONE)
-        else:
-            data = pd.read_csv(train_path)
+        data = pd.read_csv(train_path)
     else:
         print('need to define parameter, it is "--running" or "--testing"')
 
@@ -204,6 +201,7 @@ if args.data == 'multi-label':
     train, dispose = train_test_split(data, train_size= percent/100, stratify=data['severe_toxic'])
 else:
     train, dispose = train_test_split(data, train_size= percent/100, stratify=data['label'])
+print('training dataset size:', len(train))
 
 
 if args.data == 'multi-label':
