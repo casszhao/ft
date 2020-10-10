@@ -63,6 +63,107 @@ batch_size = 16
 epochs = args.epochs
 
 
+
+def train_multiclass(model, dataloader):
+
+    from transformers import get_linear_schedule_with_warmup
+    optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
+    total_steps = len(dataloader) * epochs
+    scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                num_warmup_steps=0,  # Default value in run_glue.py
+                                                num_training_steps=total_steps)
+
+
+    model.train()
+    total_loss = 0
+    for step, batch in enumerate(dataloader):
+
+        if step % 2000 == 0 and not step == 0:
+            # Calculate elapsed time in minutes.
+            elapsed = format_time(time.time() - t0)
+
+            # Report progress.
+            print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
+
+        b_input_ids = batch[0].long().to(device)
+        b_input_mask = batch[1].long().to(device)
+        b_labels = batch[2].long().to(device)
+
+        optimizer.zero_grad()
+
+        loss, logit = model(b_input_ids,
+                            token_type_ids=None,
+                            attention_mask=b_input_mask,
+                            labels=b_labels,
+                            output_attentions = False,
+                            #output_hidden_states=False,
+                            )
+
+        total_loss += loss.item()
+
+        loss.backward()
+
+        # Clip the norm of the gradients to 1.0.
+        # This is to help prevent the "exploding gradients" problem.
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        scheduler.step()
+
+    train_loss_this_epoch = total_loss / len(dataloader)
+
+    print("")
+    print("  Average training loss: {0:.2f}".format(train_loss_this_epoch))
+    return train_loss_this_epoch
+
+
+
+def validate_multiclass(model, dataloader):
+    print(" === Validate function for multi-class ===")
+    model.eval()
+    valid_loss, f1_micro_total = 0, 0
+
+    for step, batch in enumerate(dataloader):
+        batch = tuple(t.to(device) for t in batch)
+
+        # Unpack the inputs from our dataloader
+        b_input_ids = batch[0].long()
+        b_input_mask = batch[1].long()
+        b_labels = batch[2].long()
+
+        with torch.no_grad():
+            loss, logits = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
+
+        softmax = torch.nn.functional.softmax(logits, dim=1)
+        prediction = softmax.argmax(dim=1).detach().cpu().numpy()
+
+        labels = b_labels.to('cpu').numpy()
+
+        f1_micro = f1_score(labels, prediction, average='micro', zero_division=1)
+        f1_micro_total += f1_micro
+
+        valid_loss += loss
+
+    return valid_loss / len(dataloader), f1_micro_total / len(dataloader)
+    # Report the final accuracy for this validation run.
+
+
+def metrics(rounded_preds, label):
+    """
+    preds (batch size, 6) before sigmoid
+    label (batch size, 6)
+    """
+    #rounded_preds = torch.round(torch.sigmoid(preds))  # (batch size, 6)
+    pred_array = rounded_preds.cpu().detach().numpy()
+    label_array = label.cpu().detach().numpy()
+
+    #correct = (pred_array == label).float()  # convert into float for division
+    #acc = correct.sum() / len(correct)
+
+    micro_f1 = f1_score(label_array, pred_array, average='micro', zero_division=1)
+    macro_f1 = f1_score(label_array, pred_array, average='macro', zero_division=1)
+    return micro_f1, macro_f1
+
+
 train_path = './data/' + str(args.data) + '.csv'
 print('train path:', train_path)
 
@@ -242,303 +343,6 @@ elif 'gpt2' in model_name:
     print(' ')
     print('using GPT2:', model_name)
 
-'''
-
-
-if args.data == 'multi-label':
-    from multi_label_fns import validate_multilable, train_multilabel
-
-    if (('RoBerta' in model_name) or ('roberta' in model_name)):
-        from transformers import RobertaTokenizer, RobertaModel
-        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
-        from multi_label_fns import RoBerta_clf
-        model = RoBerta_clf.from_pretrained(model_name,
-                                            num_labels=NUM_LABELS,
-                                            output_attentions=False,
-                                            output_hidden_states=True)
-        print('using RoBerta:', model_name)
-        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-        print(model)
-
-    elif (('Bert' in model_name) or ('bert' in model_name)):
-        from transformers import BertTokenizer
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        from multi_label_fns import Bert_clf
-        model = Bert_clf.from_pretrained(model_name,
-                                         num_labels=NUM_LABELS,
-                                         output_attentions=False,
-                                         output_hidden_states=True)
-        print('using Bert:', model_name)
-        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-        print(model)
-
-    elif (('XLM' in model_name) or ('xlm' in model_name)):
-        from transformers import XLMTokenizer
-        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
-        from multi_label_fns import XLM_clf
-        model = XLM_clf.from_pretrained(model_name,
-                                        num_labels=NUM_LABELS,
-                                        output_attentions=False,
-                                        output_hidden_states=True)
-        print('using XLM:', model_name)
-        print(' =============== MODEL CONFIGURATION (MULTI-LABEL) ==========')
-        print(model)
-
-    elif 'gpt2' in model_name:
-        from transformers import GPT2Tokenizer, GPT2PreTrainedModel, GPT2DoubleHeadsModel
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
-        tokenizer.cls_token = tokenizer.cls_token_id
-        tokenizer.pad_token = tokenizer.eos_token
-        from gpt2 import GPT2_multilabel_clf
-
-        model = GPT2_multilabel_clf.from_pretrained(model_name,
-                                         num_labels=NUM_LABELS,
-                                         output_attentions=False,
-                                         output_hidden_states=False,
-                                         use_cache=False,
-                                         )
-        print(' ')
-        print('using GPT2:', model_name)
-
-    else:
-        print('using multi-label data but need to define using which model using --BertModel or --FTModel')
-
-# multi-class
-elif (args.data == 'wassem' or 'AG10K' or 'tweet50k'):
-    print('multi-class classification')
-
-    if (('RoBerta' in model_name) or ('roberta' in model_name)):
-        from transformers import RobertaTokenizer, RobertaForSequenceClassification, RobertaConfig
-        tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
-        model = RobertaForSequenceClassification.from_pretrained(model_name,
-                                                                 num_labels=NUM_LABELS,
-                                                                 output_attentions=False,
-                                                                 output_hidden_states=False)
-        print(' ')
-        print('using Roberta:', model_name)
-
-    elif (('Bert' in model_name) or ('bert' in model_name)):
-        from transformers import BertTokenizer, BertForSequenceClassification
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
-        model = BertForSequenceClassification.from_pretrained(model_name,
-                                                              num_labels=NUM_LABELS,
-                                                              output_attentions=False,
-                                                              output_hidden_states=False)
-        print(' ')
-        print('using Bert:', model_name)
-        print(model)
-
-    elif (('XLM' in model_name) or ('xlm' in model_name)):
-        from transformers import XLMTokenizer, XLMForSequenceClassification, XLMConfig
-        tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=True)
-        model = XLMForSequenceClassification.from_pretrained(model_name,
-                                                             num_labels=NUM_LABELS,
-                                                             output_attentions=False,
-                                                             output_hidden_states=False,
-                                                             )
-        print(' ')
-        print('using XLM:', model_name)
-
-    elif 'gpt2' in model_name:
-        from transformers import GPT2Tokenizer, GPT2PreTrainedModel, GPT2DoubleHeadsModel
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2', do_lower_case=True)
-        tokenizer.cls_token = tokenizer.cls_token_id
-        tokenizer.pad_token = tokenizer.eos_token
-        from gpt2 import GPT2_multiclass_clf
-
-        model = GPT2_multiclass_clf.from_pretrained(model_name,
-                                         num_labels=NUM_LABELS,
-                                         output_attentions=False,
-                                         output_hidden_states=False,
-                                         use_cache=False,
-                                         )
-        print(' ')
-        print('using GPT2:', model_name)
-    else:
-        print('defined multi-class classification but the model fails settingup')
-
-else:
-    print('need to define using which dataset')
-'''
-
-print(f'The model (NO frozen paras) has {count_parameters(model):,} trainable parameters')
-
-
-############################ Model and Tokenizer all set up
-params = list(model.named_parameters())
-print('The model has {:} different named parameters.\n'.format(len(params)))
-
-
-print('==== Embedding Layer ====\n')
-
-for p in params[0:5]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-
-print('\n==== Transformer 0====\n')
-for p in params[5:21]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 1====\n')
-for p in params[21:37]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 2====\n')
-for p in params[37:53]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 3====\n')
-for p in params[53:69]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 4====\n')
-for p in params[69:85]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 5====\n')
-for p in params[85:101]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 6====\n')
-for p in params[101:117]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 7====\n')
-for p in params[117:133]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 8====\n')
-for p in params[133:149]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 9====\n')
-for p in params[149:165]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 10====\n')
-for p in params[165:181]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Transformer 11====\n')
-for p in params[181:197]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print('\n==== Output Layer ====\n')
-for p in params[197:]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-
-
-def freeze_layer_fun(freeze_layers_start):
-    print('')
-    print(f'============== before this freezing, the model has {count_parameters(model):,} trainable parameters')
-    print(' the frozen parameters are:')
-    if (('Bert' in model_name) or ('bert' in model_name)):
-        for name, param in params[freeze_layers_start : freeze_layers_start + 16]:
-            print(name)
-            param.requires_grad = False
-    elif (('XLM' in model_name) or ('xlm' in model_name)):
-        for name, param in params[freeze_layers_start : freeze_layers_start + 8]:
-            print(name)
-            param.requires_grad = False
-    elif 'gpt2' in model_name:
-        for name, param in params[freeze_layers_start : freeze_layers_start + 12]:
-            print(name)
-            param.requires_grad = False
-    else:
-        print('not defined')
-    print(f' after this freezing, the model has {count_parameters(model):,} trainable parameters')
-
-
-if args.freeze != None:
-
-    if (('Bert' in model_name) or ('bert' in model_name)):
-    # for bert and roberta
-        for freeze in args.freeze:
-            if freeze == 'freeze_T1':
-                freeze_layer_fun(5)
-            elif freeze == 'freeze_T2':
-                freeze_layer_fun(21)
-            elif freeze == 'freeze_T3':
-                freeze_layer_fun(37)
-            elif freeze == 'freeze_T4':
-                freeze_layer_fun(53)
-            elif freeze == 'freeze_T5':
-                freeze_layer_fun(69)
-            elif freeze == 'freeze_T6':
-                freeze_layer_fun(85)
-            elif freeze == 'freeze_T7':
-                freeze_layer_fun(101)
-            elif freeze == 'freeze_T8':
-                freeze_layer_fun(117)
-            elif freeze == 'freeze_T9':
-                freeze_layer_fun(133)
-            elif freeze == 'freeze_T10':
-                freeze_layer_fun(149)
-            elif freeze == 'freeze_T11':
-                freeze_layer_fun(165)
-            elif freeze == 'freeze_T12':
-                freeze_layer_fun(181)
-            else:
-                pass
-
-    elif (('XLM' in model_name) or ('xlm' in model_name)):
-        for freeze in args.freeze:
-            if freeze == 'freeze_T1':
-                freeze_layer_fun(5)
-            elif freeze == 'freeze_T2':
-                freeze_layer_fun(13)
-            elif freeze == 'freeze_T3':
-                freeze_layer_fun(21)
-            elif freeze == 'freeze_T4':
-                freeze_layer_fun(29)
-            elif freeze == 'freeze_T5':
-                freeze_layer_fun(37)
-            elif freeze == 'freeze_T6':
-                freeze_layer_fun(45)
-            else:
-                pass
-    elif 'gpt2' in model_name:
-        for freeze in args.freeze:
-            if freeze == 'freeze_T1':
-                freeze_layer_fun(2)
-            elif freeze == 'freeze_T2':
-                freeze_layer_fun(14)
-            elif freeze == 'freeze_T3':
-                freeze_layer_fun(26)
-            elif freeze == 'freeze_T4':
-                freeze_layer_fun(38)
-            elif freeze == 'freeze_T5':
-                freeze_layer_fun(50)
-            elif freeze == 'freeze_T6':
-                freeze_layer_fun(62)
-            elif freeze == 'freeze_T7':
-                freeze_layer_fun(74)
-            elif freeze == 'freeze_T8':
-                freeze_layer_fun(86)
-            elif freeze == 'freeze_T9':
-                freeze_layer_fun(98)
-            elif freeze == 'freeze_T10':
-                freeze_layer_fun(110)
-            elif freeze == 'freeze_T11':
-                freeze_layer_fun(122)
-            elif freeze == 'freeze_T12':
-                freeze_layer_fun(134)
-            else:
-                pass
-else:
-    pass
-
-def freeze_attention(freeze_layers_start):
-    for name, param in params[freeze_layers_start : freeze_layers_start + 10]:
-        print('the frozen parameters are:', name)
-        param.requires_grad = False
-        print('after this frozen, thera are {} trainable parameters'.format(count_parameters(model)))
-
-if args.freeze_attention:
-    if (('Bert' in model_name) or ('bert' in model_name)):
-        freeze_layer_fun(5, 15)
-        freeze_layer_fun(21, 31)
-        freeze_layer_fun(37, 47)
-        freeze_layer_fun(53, 63)
-        freeze_layer_fun(69, 79)
-        freeze_layer_fun(85, 95)
-        freeze_layer_fun(101, 111)
-        freeze_layer_fun(117, 127)
-        freeze_layer_fun(133, 143)
-        freeze_layer_fun(149, 159)
-        freeze_layer_fun(165, 175)
-        freeze_layer_fun(181, 191)
-    else:
-        pass
-else:
-    pass
 
 print('===========================')
 print(f'The model has {count_parameters(model):,} trainable parameters')
@@ -607,106 +411,6 @@ validation_sampler = SequentialSampler(validation_data)
 validation_dataloader = DataLoader(validation_data, sampler=validation_sampler, batch_size=batch_size)
 
 
-
-def train(model, dataloader):
-
-    from transformers import get_linear_schedule_with_warmup
-    optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
-    total_steps = len(dataloader) * epochs
-    scheduler = get_linear_schedule_with_warmup(optimizer,
-                                                num_warmup_steps=0,  # Default value in run_glue.py
-                                                num_training_steps=total_steps)
-
-
-    model.train()
-    total_loss = 0
-    for step, batch in enumerate(dataloader):
-
-        if step % 2000 == 0 and not step == 0:
-            # Calculate elapsed time in minutes.
-            elapsed = format_time(time.time() - t0)
-
-            # Report progress.
-            print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
-
-        b_input_ids = batch[0].long().to(device)
-        b_input_mask = batch[1].long().to(device)
-        b_labels = batch[2].long().to(device)
-
-        optimizer.zero_grad()
-
-        loss, logit = model(b_input_ids,
-                            token_type_ids=None,
-                            attention_mask=b_input_mask,
-                            labels=b_labels,
-                            output_attentions = False,
-                            #output_hidden_states=False,
-                            )
-
-        total_loss += loss.item()
-
-        loss.backward()
-
-        # Clip the norm of the gradients to 1.0.
-        # This is to help prevent the "exploding gradients" problem.
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        optimizer.step()
-        scheduler.step()
-
-    train_loss_this_epoch = total_loss / len(dataloader)
-
-    print("")
-    print("  Average training loss: {0:.2f}".format(train_loss_this_epoch))
-    return train_loss_this_epoch
-
-
-
-def validate(model, dataloader):
-    print(" === Validate function for multi-class ===")
-    model.eval()
-    valid_loss, f1_micro_total = 0, 0
-
-    for step, batch in enumerate(dataloader):
-        batch = tuple(t.to(device) for t in batch)
-
-        # Unpack the inputs from our dataloader
-        b_input_ids = batch[0].long()
-        b_input_mask = batch[1].long()
-        b_labels = batch[2].long()
-
-        with torch.no_grad():
-            loss, logits = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
-
-        softmax = torch.nn.functional.softmax(logits, dim=1)
-        prediction = softmax.argmax(dim=1).detach().cpu().numpy()
-
-        labels = b_labels.to('cpu').numpy()
-
-        f1_micro = f1_score(labels, prediction, average='micro', zero_division=1)
-        f1_micro_total += f1_micro
-
-        valid_loss += loss
-
-    return valid_loss / len(dataloader), f1_micro_total / len(dataloader)
-    # Report the final accuracy for this validation run.
-
-
-def metrics(rounded_preds, label):
-    """
-    preds (batch size, 6) before sigmoid
-    label (batch size, 6)
-    """
-    #rounded_preds = torch.round(torch.sigmoid(preds))  # (batch size, 6)
-    pred_array = rounded_preds.cpu().detach().numpy()
-    label_array = label.cpu().detach().numpy()
-
-    #correct = (pred_array == label).float()  # convert into float for division
-    #acc = correct.sum() / len(correct)
-
-    micro_f1 = f1_score(label_array, pred_array, average='micro', zero_division=1)
-    macro_f1 = f1_score(label_array, pred_array, average='macro', zero_division=1)
-    return micro_f1, macro_f1
-
 '''
 ================== Training Loop =======================
 '''
@@ -731,10 +435,7 @@ for epoch_i in range(0, epochs):
     print("")
     print('========== Epoch {:} / {:} =========='.format(epoch_i + 1, epochs))
     t0 = time.time()
-    if args.data == 'multi-label':
-        train_loss = train_multilabel(model, train_dataloader)
-    else:
-        train_loss = train(model, train_dataloader)
+    train_loss = train_multiclass(model, train_dataloader)
     print("  Training epcoh took: {:}".format(format_time(time.time() - t0)))
     print("")
     print("Running Validation...")
@@ -743,7 +444,7 @@ for epoch_i in range(0, epochs):
     if args.data == 'multi-label':
         valid_loss = validate_multilable(model, validation_dataloader)
     else:
-        valid_loss = validate(model, validation_dataloader)
+        valid_loss = validate_multiclass(model, validation_dataloader)
     print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
 #torch.save(model.state_dict(), str(args.resultpath) + resultname + '_model.pt')
@@ -758,12 +459,6 @@ prediction_dataloader = DataLoader(prediction_data, sampler=prediction_sampler, 
 model.eval()
 
 predictions = torch.Tensor().to(device)
-
-def clean_dataset(df):
-    assert isinstance(df, pd.DataFrame), "df needs to be a pd.DataFrame"
-    df.dropna(inplace=True)
-    indices_to_keep = ~df.isin([np.nan, np.inf, -np.inf]).any(1)
-    return df[indices_to_keep].astype(np.float64)
 
 
 if args.data == 'multi-label':

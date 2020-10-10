@@ -242,6 +242,13 @@ if args.data == 'AG10K':
         data = pd.read_csv(train_path, names = ['id', 'comment', 'label'])
     else:
         print('need to define parameter, it is "--running" or "--testing"')
+elif args.data == 'tweet50k':
+    if args.testing:
+        data = pd.read_csv(train_path, names = ['id', 'label', 'comment']).sample(500)
+    elif args.running:
+        data = pd.read_csv(train_path, names = ['id', 'label', 'comment'])
+    else:
+        print('need to define parameter, it is "--running" or "--testing"')
 else:
     if args.testing:
         data = pd.read_csv(train_path).sample(5000)
