@@ -198,6 +198,7 @@ else:
     test, validation = train_test_split(data, test_size=0.5, stratify=data['label'])
 
 
+percent = 99
 print('--------------training dataset size: ', percent/100)
 if args.data == 'multi-label':
     train, dispose = train_test_split(data, train_size= percent/100, stratify=data['severe_toxic'])
