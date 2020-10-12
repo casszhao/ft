@@ -466,7 +466,7 @@ start = args.start
 increment = args.increment
 
 print('int(100/increment)+1', int(100/increment)+1)
-#loop(train, test, validation, start)
+loop(train, test, validation, start)
 for i in range(1, int(100/increment)+1):
     percent = start + i*increment
     if percent <= 100:
