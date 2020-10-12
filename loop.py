@@ -49,7 +49,11 @@ parser.add_argument('-i', '--increment', type=int, default=10, metavar='', help=
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
 
-
+print('================')
+print('================')
+print(args.data)
+print('================')
+print('================')
 MAX_LEN = 100
 
 if args.data == 'AG10K':
