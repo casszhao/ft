@@ -180,9 +180,9 @@ elif args.data == 'wassem':
         test = pd.read_csv('./data/wassem_test.csv').sample(100)
         validation = pd.read_csv('./data/wassem_validation.csv').sample(100)
     elif args.running:
-        train = pd.read_csv('./data/wassem_train.csv')
-        test = pd.read_csv('./data/wassem_test.csv')
-        validation = pd.read_csv('./data/wassem_validationcsv')
+        train = pd.read_csv('./data/wassem_train.csv').dropna()
+        test = pd.read_csv('./data/wassem_test.csv').dropna()
+        validation = pd.read_csv('./data/wassem_validation.csv').dropna()
     else:
         print('need to define parameter, it is "--running" or "--testing"')
 
@@ -190,7 +190,7 @@ elif args.data == 'tweet50k':
     if args.testing:
         data = pd.read_csv('./data/tweet50k.csv', names = ['id', 'label', 'comment']).sample(500)
     elif args.running:
-        data = pd.read_csv('./data/tweet50k.csv', names = ['id', 'label', 'comment'])
+        data = pd.read_csv('./data/tweet50k.csv', names = ['id', 'label', 'comment']).dropna()
     else:
         print('need to define parameter, it is "--running" or "--testing"')
     train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
