@@ -561,7 +561,6 @@ def train_multilabel(model, dataloader):
                             )
 
         total_loss += loss.item()
-
         loss.backward()
 
         # Clip the norm of the gradients to 1.0.
