@@ -539,10 +539,11 @@ def validate_multilable(model, dataloader):
     # Report the final accuracy for this validation run.
 
 
-epochs = 3
+
 def train_multilabel(model, dataloader):
     from transformers import get_linear_schedule_with_warmup
     optimizer = AdamW(model.parameters(), lr=5e-5, eps=1e-8)
+    epochs = 3
     total_steps = len(dataloader) * epochs
     scheduler = get_linear_schedule_with_warmup(optimizer,
                                                 num_warmup_steps=0,  # Default value in run_glue.py
