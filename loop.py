@@ -480,7 +480,7 @@ print('int(100/increment)+1', int(100/increment)+1)
 loop(train, test, validation, start)
 for i in range(1, int(100/increment)+1):
     percent = start + i*increment
-    if percent <= 100:
+    if percent <= 10:
         print('percent      ', percent)
         loop(train, test, validation, percent)
     else:
