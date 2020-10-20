@@ -143,6 +143,7 @@ class Bert_clf(BertPreTrainedModel):
                 loss_fct = nn.BCEWithLogitsLoss()#.to(device)
             else:
                 loss_fct = nn.CrossEntropyLoss()
+            #logits = logits.type_as(labels)
 
             loss = loss_fct(logits, labels)
             output = (loss, logits)
