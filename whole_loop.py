@@ -44,7 +44,6 @@ group.add_argument('--testing', action='store_true', help='testing')
 # 4
 
 parser.add_argument('-s', '--start', type=float, default=1, metavar='', help='start from 1x10 percent')
-parser.add_argument('-i', '--increment', type=float, default=10, metavar='', help='increase 10 percent each time')
 
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
@@ -475,16 +474,38 @@ def loop(train, test, validation, percent):
     print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
 
 start = args.start
-increment = args.increment
+percent = 0.5
 
 # start from start percentage first
 loop(train, test, validation, percent)
 # start from increment
-for i in range(1, int(100/increment)+1):
 
-    percent = start + i*increment
-    if percent <= 5:
-        print('percent      ', percent)
-        loop(train, test, validation, percent)
-    else:
-        pass
+# 0.5 + 0.5*n till 10, 19 round
+for i in range(1, 20):
+    percent = start + i*0.5
+    print('-------------------percent      ', percent)
+    loop(train, test, validation, percent)
+
+# 10 + 1*n till 15, 5 round
+for i in range(1, 6):
+    percent = 10 + i
+    print('-------------------percent      ', percent)
+    loop(train, test, validation, percent)
+
+# 15 + 5*n till 30, 3 round
+for i in range(1, 4):
+    percent = 15 + i*5
+    print('-------------------percent      ', percent)
+    loop(train, test, validation, percent)
+
+# 30 + 10*n till 60, 3 round
+for i in range(1, 4):
+    percent = 30 + i*10
+    print('-------------------percent      ', percent)
+    loop(train, test, validation, percent)
+
+# 60 + 20*n till 100, 2 round
+for i in range(1, 3):
+    percent = 60 + i*20
+    print('-------------------percent      ', percent)
+    loop(train, test, validation, percent)
