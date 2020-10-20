@@ -118,7 +118,6 @@ def train_multiclass(model, dataloader):
 
 
 def validate_multiclass(model, dataloader):
-    print(" === Validate function for multi-class ===")
     model.eval()
     valid_loss, f1_micro_total = 0, 0
 
