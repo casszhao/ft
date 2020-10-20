@@ -190,10 +190,13 @@ elif args.data == 'wassem':
 
 elif args.data == 'tweet50k':
     if args.testing:
-        data = pd.read_csv('./data/tweet50k.csv', names = ['id', 'label', 'comment']).sample(500)
+        data = pd.read_csv('./data/tweet50k.csv', header=0, names = ['id', 'label', 'comment']).sample(500)
+        print('Label', data['label'].unique())
+        print(len(data))
     elif args.running:
-        data = pd.read_csv('./data/tweet50k.csv', names = ['id', 'label', 'comment']).dropna()
-        print(data['label'].unique())
+        data = pd.read_csv('./data/tweet50k.csv', header=0, names = ['id', 'label', 'comment']).dropna()
+        print('Label', data['label'].unique())
+        print('the whole data set:', len(data))
     else:
         print('need to define parameter, it is "--running" or "--testing"')
     train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
