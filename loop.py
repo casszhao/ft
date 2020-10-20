@@ -43,8 +43,8 @@ group.add_argument('--running', action='store_true', help='running using the ori
 group.add_argument('--testing', action='store_true', help='testing')
 # 4
 
-parser.add_argument('-s', '--start', type=int, default=1, metavar='', help='start from 1x10 percent')
-parser.add_argument('-i', '--increment', type=int, default=10, metavar='', help='increase 10 percent each time')
+parser.add_argument('-s', '--start', type=float, default=1, metavar='', help='start from 1x10 percent')
+parser.add_argument('-i', '--increment', type=float, default=10, metavar='', help='increase 10 percent each time')
 
 parser.add_argument('--resultpath', type=str, help='where to save the result csv')
 args = parser.parse_args()
@@ -74,7 +74,6 @@ def train_multiclass(model, dataloader):
     scheduler = get_linear_schedule_with_warmup(optimizer,
                                                 num_warmup_steps=0,  # Default value in run_glue.py
                                                 num_training_steps=total_steps)
-
 
     model.train()
     total_loss = 0
@@ -173,6 +172,7 @@ if args.data == 'AG10K':
         data = pd.read_csv('./data/AG10K.csv', usecols=[1,2], names = ['comment', 'label']).sample(500)
     elif args.running:
         data = pd.read_csv('./data/AG10K.csv', usecols=[1,2], names = ['comment', 'label'])
+        print(data['label'].unique())
     else:
         print('need to define parameter, it is "--running" or "--testing"')
     train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
@@ -195,6 +195,7 @@ elif args.data == 'tweet50k':
         data = pd.read_csv('./data/tweet50k.csv', names = ['id', 'label', 'comment']).sample(500)
     elif args.running:
         data = pd.read_csv('./data/tweet50k.csv', names = ['id', 'label', 'comment']).dropna()
+        print(data['label'].unique())
     else:
         print('need to define parameter, it is "--running" or "--testing"')
     train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
