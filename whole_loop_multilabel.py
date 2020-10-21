@@ -84,7 +84,7 @@ if args.testing:
     test, validation = train_test_split(test, test_size=0.5)
     print(test['identity_hate'].value_counts())
 elif args.running:
-    data = pd.read_csv('./data/multi-label.csv', header=0, engine='c')
+    data = pd.read_csv('./data/multi-label.csv', header=0)
     train, test = train_test_split(data, test_size=0.2, stratify=data['identity_hate'])
     test, validation = train_test_split(test, test_size=0.5, stratify=test['identity_hate'])
     print(test['identity_hate'].value_counts())
