@@ -251,7 +251,7 @@ def loop(train, test, validation, percent):
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=False)
         from multi_label_fns import RoBerta_clf
 
-        model = RoBerta_clf.from_pretrained(model_name,
+        model = RoBerta_clf.from_pretrained(whame,
                                             num_labels=NUM_LABELS,
                                             output_attentions=False,
                                             output_hidden_states=True)
