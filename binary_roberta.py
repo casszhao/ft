@@ -57,11 +57,12 @@ batch_size = 16
 epochs = args.epochs
 
 if args.testing:
-    data = pd.read_csv('./data/IMDB.csv', names=['comment', 'label']).sample(500)
+    data = pd.read_csv('./data/IMDB.csv', header=0, names=['comment', 'label']).sample(500)
 elif args.running:
-    data = pd.read_csv('./data/IMDB.csv', names=['comment', 'label'])
+    data = pd.read_csv('./data/IMDB.csv', header=0, names=['comment', 'label'])
 else:
     print('need to define parameter, it is "--running" or "--testing"')
+
 train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
 test, validation = train_test_split(test, test_size=0.5, stratify=test['label'])
 
