@@ -398,7 +398,6 @@ test['label_encoded'] = labels_test
 f1_micro = f1_score(test['label_encoded'], test['prediction'], average='micro')
 f1_macro = f1_score(test['label_encoded'], test['prediction'], average='macro')
 print('RESULTS -----------')
-print(str(args.data))
 print('f1_micro:', f1_micro, 'f1_macro:', f1_macro)
 print(classification_report(test['label_encoded'], test['prediction'], zero_division=1, digits=4))
 test.to_csv('IMBD_Roberta.csv')
