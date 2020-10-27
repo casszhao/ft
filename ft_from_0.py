@@ -1,12 +1,4 @@
-''' using target datasets for pre-training
-including:
-         0. preprocessing csv to txt
-         1. train LM and save itindeedou
 
-
-
-
-'''
 import torch
 import argparse
 import time
@@ -36,7 +28,7 @@ parser.add_argument('--num_train_epochs', '-e', type=int)
 parser.add_argument('--batch_size', '-b', type=int)
 
 # 3
-parser.add_argument('--data', type=str, action='store', choices = ['AG10K', 'wassem', 'tweet50k', 'multi-label', 'IMDB'])
+parser.add_argument('--data', type=str, action='store', choices = ['AG10K', 'wassem', 'tweet50k', 'multi-label'])
 
 # 4
 parser.add_argument('--resultpath', type=str, help='where to save the LM model')
@@ -45,8 +37,6 @@ args = parser.parse_args()
 import pandas as pd
 import regex as re
 
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 if args.LM == 'Bert':
@@ -59,7 +49,8 @@ if args.LM == 'Bert':
                         #type_vocab_size=2, default is 2
                         )
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased', do_lower_case=False)
-    model = BertForMaskedLM.from_pretrained('bert-base-cased', config=config)
+    model = BertForMaskedLM.from_pretrained('./multi-label_LM/multi-label_Bert_e10_b16', config=config)
+    #model = BertForMaskedLM.from_pretrained('./multi-label_train.csv_LMmodel', config=config)
     # 12-layer, 768-hidden, 12-heads, 110M parameters.
 
 elif args.LM == 'RoBerta':
@@ -72,7 +63,7 @@ elif args.LM == 'RoBerta':
                            type_vocab_size=1,
                            )
     tokenizer = RobertaTokenizerFast.from_pretrained('roberta-base', do_lower_case=False)
-    model = RobertaForMaskedLM.from_pretrained('roberta-base', config=config)
+    model = RobertaForMaskedLM.from_pretrained('./multi-label_LM/multi-label_RoBerta_e10_b16', config=config)
     # 12-layer, 768-hidden, 12-heads, 125M parameters, roberta-base using the bert-base architecture
 
 elif args.LM == 'XLM':
@@ -86,7 +77,7 @@ elif args.LM == 'XLM':
                        )
 
     tokenizer = XLMTokenizer.from_pretrained('xlm-mlm-enfr-1024', do_lower_case=False)
-    model = XLMWithLMHeadModel.from_pretrained('xlm-mlm-enfr-1024', config=config)
+    model = XLMWithLMHeadModel.from_pretrained('./multi-label_LM/multi-label_XLM_e10_b16', config=config)
     # 6-layer, 1024-hidden, 8-heads
     # XLM English-French model trained on the concatenation of English and French wikipedia
 
@@ -104,22 +95,15 @@ def freeze_layer_fun(freeze_layer):
             pass
 
 
-print('===========================')
-print('The model has: ', count_parameters(model))
-print('===========================')
+file_path = 'multi-label_train.csv.txt'
 
-if args.testing:
-    file_path = 'xaa.txt'
-else:
-    file_path = str(args.data) + '_train.csv.txt'
-print('file_path: ', file_path)
 
-dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path=file_path, block_size=128)
+dataset = LineByLineTextDataset(tokenizer=tokenizer, file_path= file_path, block_size=128)
 #dataset = load_dataset("./csv_for_ft_new.py", data_files=file_path)
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
 
 
-dir = str(args.resultpath) + str(args.data) + '_' + str(args.LM) + '_e' + str(args.num_train_epochs) + '_b' + str(args.batch_size)
+dir = str(args.resultpath) + str(args.data) + '_' + str(args.LM) + '_e20' + '_b' + str(args.batch_size)
 
 training_args = TrainingArguments(
     do_train=True,
@@ -128,7 +112,7 @@ training_args = TrainingArguments(
     overwrite_output_dir=True,
     num_train_epochs= args.num_train_epochs,
     per_device_train_batch_size=args.batch_size,
-    save_steps=1000,
+    save_steps=10000,
     save_total_limit=2,
 )
 
