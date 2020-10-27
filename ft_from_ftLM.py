@@ -3,7 +3,7 @@ including:
          0. preprocessing csv to txt
          1. train LM and save it
 '''
-'''
+
 import argparse
 parser = argparse.ArgumentParser(description='convert json to txt for later training')
 # 0
@@ -23,7 +23,7 @@ parser.add_argument('--csvfile', type=str, help='a csv file, to be used for fine
 parser.add_argument('--ftLMpath', type=str, help='a file path which contains pre-trained LM model.')
 
 args = parser.parse_args()
-'''
+
 
 import pandas as pd
 import regex as re

@@ -27,7 +27,7 @@ parser.add_argument('--num_train_epochs', '-e', type=int)
 parser.add_argument('--batch_size', '-b', type=int)
 
 # 3
-parser.add_argument('--data', type=str, action='store', choices = ['AG10K', 'wassem', 'tweet50k', 'multi-label', 'IMDB'])
+parser.add_argument('--data', type=str, action='store')
 
 # 4
 parser.add_argument('--resultpath', type=str, help='where to save the LM model')
