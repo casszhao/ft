@@ -1,12 +1,3 @@
-''' using target datasets for pre-training
-including:
-         0. preprocessing csv to txt
-         1. train LM and save itindeedou
-
-
-
-
-'''
 import torch
 import argparse
 import time
