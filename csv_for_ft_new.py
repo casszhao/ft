@@ -95,15 +95,6 @@ else:
 
 print(model)
 
-def freeze_layer_fun(freeze_layer):
-    for name, param in model.named_parameters():
-        if freeze_layer in name:
-            print(name)
-            param.requires_grad = False
-        else:
-            pass
-
-
 print('===========================')
 print('The model has: ', count_parameters(model))
 print('===========================')
