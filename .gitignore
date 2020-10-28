@@ -21,3 +21,5 @@ lm_model/
 /xaj
 /xak
 slurm*
+
+ft_from_ftLM.py
