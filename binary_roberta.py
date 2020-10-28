@@ -62,8 +62,12 @@ elif args.running:
 else:
     print('need to define parameter, it is "--running" or "--testing"')
 
-train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
-test, validation = train_test_split(test, test_size=0.5, stratify=test['label'])
+print('data # ', len(data))
+train, test = train_test_split(data, train_size=0.4, stratify=data['label'])
+test, validation = train_test_split(test, test_size=5000, stratify=test['label'])
+print('train # ', len(train))
+print('test # ', len(test))
+print('validation # ', len(validation))
 
 
 sentences_train = train.comment.values
