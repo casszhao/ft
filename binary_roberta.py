@@ -33,7 +33,6 @@ def format_time(elapsed):
 
 parser = argparse.ArgumentParser(description='run fine-tuned model on multi-label dataset')
 # 0
-parser.add_argument('--data', type=str) #, choices=['multi-label', 'wassem', 'AG10K', 'tweet50k']
 # 1
 parser.add_argument('--FTModel', type=str, help= 'where is the saved trained language model, including path and name')
 parser.add_argument('--BertModel', type=str, action='store', choices = ['Bert','RoBerta','XLM', 'XLNet', 'ELECTRA', 'gpt2', 'bert_xlm'])
@@ -65,7 +64,6 @@ else:
 
 train, test = train_test_split(data, test_size=0.2, stratify=data['label'])
 test, validation = train_test_split(test, test_size=0.5, stratify=test['label'])
-
 
 
 sentences_train = train.comment.values
