@@ -1,6 +1,15 @@
 import torch
-#import argparse
+import argparse
 from transformers import LineByLineTextDataset, DataCollatorForLanguageModeling, Trainer, TrainingArguments
+
+parser = argparse.ArgumentParser(description='fine-tune roberta using IMDB')
+
+parser.add_argument('--epochs', '-e', type=int)
+
+args = parser.parse_args()
+
+
+
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
@@ -34,7 +43,7 @@ training_args = TrainingArguments(
     do_predict=True,
     output_dir=dir,
     overwrite_output_dir=True,
-    num_train_epochs= 10,
+    num_train_epochs= args.epochs,
     per_device_train_batch_size=16,
     save_steps=1000,
     save_total_limit=2,
