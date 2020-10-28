@@ -1,9 +1,3 @@
-''' using target datasets for pre-training
-including:
-         0. preprocessing csv to txt
-         1. train LM and save it
-'''
-
 import argparse
 parser = argparse.ArgumentParser(description='convert json to txt for later training')
 # 0
